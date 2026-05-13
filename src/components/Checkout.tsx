@@ -1,0 +1,279 @@
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { ArrowLeft, CreditCard, Truck, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { CartItem } from '../types';
+
+interface CheckoutProps {
+  items: CartItem[];
+  onBack: () => void;
+  onComplete: () => void;
+}
+
+export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    email: '',
+    nome: '',
+    apelido: '',
+    morada: '',
+    cidade: '',
+    codigoPostal: '',
+    telefone: '',
+    paymentMethod: 'card'
+  });
+
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const shipping = 5.90;
+  const total = subtotal + shipping;
+
+  const formatPrice = (val: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(val);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step < 2) {
+      setStep(step + 1);
+      window.scrollTo(0, 0);
+    } else {
+      onComplete();
+    }
+  };
+
+  return (
+    <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto">
+      <button 
+        onClick={onBack}
+        className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red transition-colors mb-12"
+      >
+        <ArrowLeft size={16} /> Voltar ao Carrinho
+      </button>
+
+      <div className="flex flex-col lg:flex-row gap-16">
+        {/* Main Form */}
+        <div className="flex-1">
+          <div className="flex items-center gap-8 mb-12">
+            <div className={`flex items-center gap-3 ${step >= 1 ? 'text-brand-red' : 'text-gray-300'}`}>
+              <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${step >= 1 ? 'border-brand-red bg-brand-red text-white' : 'border-gray-200'}`}>1</span>
+              <span className="text-xs font-bold tracking-widest uppercase">Envio</span>
+            </div>
+            <div className="h-px bg-gray-100 flex-1" />
+            <div className={`flex items-center gap-3 ${step >= 2 ? 'text-brand-red' : 'text-gray-300'}`}>
+              <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${step >= 2 ? 'border-brand-red bg-brand-red text-white' : 'border-gray-200'}`}>2</span>
+              <span className="text-xs font-bold tracking-widest uppercase">Pagamento</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-12">
+            {step === 1 ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                <div>
+                  <h3 className="text-2xl font-serif mb-6">Informação de Contacto</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                      required
+                      type="text"
+                      name="nome"
+                      placeholder="Nome"
+                      value={formData.nome}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                    <input
+                      required
+                      type="text"
+                      name="apelido"
+                      placeholder="Apelido"
+                      value={formData.apelido}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                    <input
+                      required
+                      type="email"
+                      name="email"
+                      placeholder="E-mail"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                    <input
+                      required
+                      type="tel"
+                      name="telefone"
+                      placeholder="Telefone / Telemóvel"
+                      value={formData.telefone}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-serif mb-6">Dados de Envio</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                      required
+                      type="text"
+                      name="morada"
+                      placeholder="Morada"
+                      value={formData.morada}
+                      onChange={handleInputChange}
+                      className="sm:col-span-2 border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                    <input
+                      required
+                      type="text"
+                      name="cidade"
+                      placeholder="Cidade"
+                      value={formData.cidade}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                    <input
+                      required
+                      type="text"
+                      name="codigoPostal"
+                      placeholder="Código Postal (ex: 4000-000)"
+                      value={formData.codigoPostal}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
+                <h3 className="text-2xl font-serif mb-6">Método de Pagamento</h3>
+                <div className="space-y-4">
+                  <div 
+                    onClick={() => setFormData({...formData, paymentMethod: 'card'})}
+                    className={`p-6 border rounded-sm flex items-center justify-between cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'border-brand-red bg-brand-red/5 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <CreditCard className={formData.paymentMethod === 'card' ? 'text-brand-red' : 'text-gray-400'} />
+                      <span className="text-sm font-sans font-medium">Cartão de Crédito / Débito</span>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 ${formData.paymentMethod === 'card' ? 'border-brand-red bg-brand-red' : 'border-gray-300'}`} />
+                  </div>
+
+                  <div 
+                    onClick={() => setFormData({...formData, paymentMethod: 'mbway'})}
+                    className={`p-6 border rounded-sm flex items-center justify-between cursor-pointer transition-all ${formData.paymentMethod === 'mbway' ? 'border-brand-red bg-brand-red/5 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-6 h-6 bg-[#005ea1] text-white text-[8px] flex items-center justify-center font-bold rounded-sm">MB</div>
+                      <span className="text-sm font-sans font-medium">MB WAY / Referência Multibanco</span>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 ${formData.paymentMethod === 'mbway' ? 'border-brand-red bg-brand-red' : 'border-gray-300'}`} />
+                  </div>
+                </div>
+
+                {formData.paymentMethod === 'card' && (
+                  <div className="p-6 bg-gray-50/50 rounded-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <input
+                      type="text"
+                      placeholder="Número do Cartão"
+                      className="w-full border-b border-gray-200 py-3 bg-transparent focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <input
+                        type="text"
+                        placeholder="MM/AA"
+                        className="border-b border-gray-200 py-3 bg-transparent focus:border-brand-red outline-none transition-all font-sans"
+                      />
+                      <input
+                        type="text"
+                        placeholder="CVV"
+                        className="border-b border-gray-200 py-3 bg-transparent focus:border-brand-red outline-none transition-all font-sans"
+                      />
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            <div className="flex justify-between items-center pt-8 border-t border-gray-100">
+              {step === 2 && (
+                <button 
+                  type="button" 
+                  onClick={() => setStep(1)}
+                  className="text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-brand-charcoal transition-all"
+                >
+                  Voltar ao passo 1
+                </button>
+              )}
+              <button 
+                type="submit"
+                className="ml-auto bg-brand-red text-white px-12 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-brand-red/90 transition-all rounded-sm shadow-lg shadow-brand-red/20"
+              >
+                {step === 1 ? 'Continuar para Pagamento' : 'Pagar e Finalizar'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Sidebar Order Summary */}
+        <aside className="w-full lg:w-[400px] bg-white border border-gray-100 p-8 rounded-sm sticky top-32 h-fit">
+          <h3 className="text-xl font-serif mb-8 flex items-center gap-3">
+            <CheckCircle2 size={20} className="text-brand-red" />
+            Resumo do Pedido
+          </h3>
+          
+          <div className="space-y-6 mb-8 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
+            {items.map((item) => (
+              <div key={item.id} className="flex gap-4">
+                <div className="w-16 h-20 bg-gray-50 flex items-center justify-center p-2 border border-gray-100 rounded-sm">
+                  <img src={item.image} alt={item.name} className="h-full object-contain" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xs font-serif text-brand-charcoal leading-tight mb-1">{item.name}</h4>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-gray-400">Qtd: {item.quantity}</span>
+                    <span className="text-xs font-medium">{formatPrice(item.price * item.quantity)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-4 pt-6 border-t border-gray-100 mb-8">
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>Subtotal</span>
+              <span>{formatPrice(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-500">
+              <span className="flex items-center gap-2 italic"><Truck size={14} /> Envio Standard</span>
+              <span>{formatPrice(shipping)}</span>
+            </div>
+            <div className="flex justify-between text-lg font-serif text-brand-charcoal pt-4 border-t border-gray-200">
+              <span>Total</span>
+              <span className="text-brand-red font-bold">{formatPrice(total)}</span>
+            </div>
+          </div>
+
+          <div className="space-y-4 bg-gray-50 p-4 rounded-sm">
+            <div className="flex items-start gap-3 opacity-60">
+              <ShieldCheck size={18} className="text-brand-gold mt-0.5" />
+              <div className="text-[10px] uppercase tracking-widest font-bold">Pagamento Seguro</div>
+            </div>
+            <p className="text-[9px] text-gray-400 font-sans leading-relaxed">
+              Os seus dados são processados de forma segura e encriptada. Ao finalizar a encomenda, concorda com os nossos termos de serviço.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
