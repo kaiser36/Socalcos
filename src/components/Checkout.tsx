@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, CreditCard, Truck, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, CheckCircle2, Mail, Info } from 'lucide-react';
 import { CartItem } from '../types';
 
 interface CheckoutProps {
@@ -19,11 +19,12 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
     cidade: '',
     codigoPostal: '',
     telefone: '',
-    paymentMethod: 'card'
+    pais: '',
+    paymentMethod: 'email'
   });
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = 5.90;
+  const shipping = 0;
   const total = subtotal + shipping;
 
   const formatPrice = (val: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(val);
@@ -63,7 +64,7 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
             <div className="h-px bg-gray-100 flex-1" />
             <div className={`flex items-center gap-3 ${step >= 2 ? 'text-brand-red' : 'text-gray-300'}`}>
               <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${step >= 2 ? 'border-brand-red bg-brand-red text-white' : 'border-gray-200'}`}>2</span>
-              <span className="text-xs font-bold tracking-widest uppercase">Pagamento</span>
+              <span className="text-xs font-bold tracking-widest uppercase">Confirmação</span>
             </div>
           </div>
 
@@ -146,6 +147,15 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
                       onChange={handleInputChange}
                       className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
                     />
+                    <input
+                      required
+                      type="text"
+                      name="pais"
+                      placeholder="País"
+                      value={formData.pais}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -155,52 +165,22 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-8"
               >
-                <h3 className="text-2xl font-serif mb-6">Método de Pagamento</h3>
-                <div className="space-y-4">
-                  <div 
-                    onClick={() => setFormData({...formData, paymentMethod: 'card'})}
-                    className={`p-6 border rounded-sm flex items-center justify-between cursor-pointer transition-all ${formData.paymentMethod === 'card' ? 'border-brand-red bg-brand-red/5 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <CreditCard className={formData.paymentMethod === 'card' ? 'text-brand-red' : 'text-gray-400'} />
-                      <span className="text-sm font-sans font-medium">Cartão de Crédito / Débito</span>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${formData.paymentMethod === 'card' ? 'border-brand-red bg-brand-red' : 'border-gray-300'}`} />
+                <h3 className="text-2xl font-serif mb-6">Confirmação de Pedido</h3>
+                
+                <div className="p-8 border border-brand-red bg-brand-red/5 rounded-sm space-y-6">
+                  <div className="flex items-center gap-4 text-brand-red">
+                    <Mail size={24} />
+                    <span className="text-lg font-serif font-medium">Pedido da encomenda por email</span>
                   </div>
-
-                  <div 
-                    onClick={() => setFormData({...formData, paymentMethod: 'mbway'})}
-                    className={`p-6 border rounded-sm flex items-center justify-between cursor-pointer transition-all ${formData.paymentMethod === 'mbway' ? 'border-brand-red bg-brand-red/5 shadow-sm' : 'border-gray-200 hover:border-gray-300'}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-6 h-6 bg-[#005ea1] text-white text-[8px] flex items-center justify-center font-bold rounded-sm">MB</div>
-                      <span className="text-sm font-sans font-medium">MB WAY / Referência Multibanco</span>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${formData.paymentMethod === 'mbway' ? 'border-brand-red bg-brand-red' : 'border-gray-300'}`} />
+                  
+                  <div className="flex gap-4 p-4 bg-white/50 rounded-sm border border-brand-red/10">
+                    <Info size={20} className="text-brand-red shrink-0 mt-1" />
+                    <p className="text-sm font-sans leading-relaxed text-brand-charcoal">
+                      É necessário verificar a disponibilidade do Stock ou prazos de entrega. 
+                      Entraremos em contato para confirmar a sua encomenda, acertar o envio e o pagamento.
+                    </p>
                   </div>
                 </div>
-
-                {formData.paymentMethod === 'card' && (
-                  <div className="p-6 bg-gray-50/50 rounded-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <input
-                      type="text"
-                      placeholder="Número do Cartão"
-                      className="w-full border-b border-gray-200 py-3 bg-transparent focus:border-brand-red outline-none transition-all font-sans"
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        placeholder="MM/AA"
-                        className="border-b border-gray-200 py-3 bg-transparent focus:border-brand-red outline-none transition-all font-sans"
-                      />
-                      <input
-                        type="text"
-                        placeholder="CVV"
-                        className="border-b border-gray-200 py-3 bg-transparent focus:border-brand-red outline-none transition-all font-sans"
-                      />
-                    </div>
-                  </div>
-                )}
               </motion.div>
             )}
 
@@ -218,7 +198,7 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
                 type="submit"
                 className="ml-auto bg-brand-red text-white px-12 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-brand-red/90 transition-all rounded-sm shadow-lg shadow-brand-red/20"
               >
-                {step === 1 ? 'Continuar para Pagamento' : 'Pagar e Finalizar'}
+                {step === 1 ? 'Continuar para Confirmação' : 'Finalizar Pedido'}
               </button>
             </div>
           </form>
@@ -253,10 +233,7 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-sm text-gray-500">
-              <span className="flex items-center gap-2 italic"><Truck size={14} /> Envio Standard</span>
-              <span>{formatPrice(shipping)}</span>
-            </div>
+
             <div className="flex justify-between text-lg font-serif text-brand-charcoal pt-4 border-t border-gray-200">
               <span>Total</span>
               <span className="text-brand-red font-bold">{formatPrice(total)}</span>

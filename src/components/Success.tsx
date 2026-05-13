@@ -22,7 +22,7 @@ export default function Success({ onGoHome, onGoStore }: SuccessProps) {
 
         <h1 className="text-5xl font-serif text-brand-charcoal mb-6">Encomenda Realizada!</h1>
         <p className="text-lg text-gray-600 mb-12 font-sans px-4">
-          Obrigado pela sua preferência. A sua encomenda <span className="font-bold text-brand-charcoal">#{orderNumber}</span> foi processada com sucesso e receberá um e-mail de confirmação em breve.
+          Obrigado pela sua preferência. A sua encomenda <span className="font-bold text-brand-charcoal">#{orderNumber}</span> foi processada com sucesso e receberá um contato de confirmação em breve.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
