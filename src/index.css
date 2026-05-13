@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "EB Garamond", serif;
+  --font-sans: "Hanken Grotesk", sans-serif;
+
+  --color-brand-red: #720E1E;
+  --color-brand-gold: #B4975A;
+  --color-brand-charcoal: #2D2D2D;
+  --color-brand-offwhite: #F9F9F7;
+
+  --spacing-section: 120px;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-offwhite text-brand-charcoal font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+}
