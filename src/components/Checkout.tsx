@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, CreditCard, Truck, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { CartItem } from '../types';
@@ -76,21 +76,6 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
               >
                 <div>
                   <h3 className="text-2xl font-serif mb-6">Informação de Contacto</h3>
-                  <div className="space-y-4">
-                    <input
-                      required
-                      type="email"
-                      name="email"
-                      placeholder="E-mail"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-2xl font-serif mb-6">Dados de Envio</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <input
                       required
@@ -110,6 +95,30 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
                       onChange={handleInputChange}
                       className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
                     />
+                    <input
+                      required
+                      type="email"
+                      name="email"
+                      placeholder="E-mail"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                    <input
+                      required
+                      type="tel"
+                      name="telefone"
+                      placeholder="Telefone / Telemóvel"
+                      value={formData.telefone}
+                      onChange={handleInputChange}
+                      className="border-b border-gray-200 py-3 focus:border-brand-red outline-none transition-all font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl font-serif mb-6">Dados de Envio</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <input
                       required
                       type="text"

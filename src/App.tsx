@@ -9,6 +9,7 @@ import Hero from './components/Hero';
 import Categories from './components/Categories';
 import Favorites from './components/Favorites';
 import About from './components/About';
+import AboutPage from './components/AboutPage';
 import Gallery from './components/Gallery';
 import Footer from './components/Footer';
 import Store from './components/Store';
@@ -20,7 +21,7 @@ import { products } from './data/products';
 import { CartItem, Product } from './types';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about'>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -82,10 +83,12 @@ export default function App() {
             <Hero onNavigate={setCurrentPage} />
             <Categories />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} />
-            <About />
+            <About onNavigate={setCurrentPage} />
             <Gallery />
           </>
         );
+      case 'about':
+        return <AboutPage />;
       case 'store':
         return <Store onSelectProduct={handleProductSelect} onAddToCart={addToCart} />;
       case 'detail':

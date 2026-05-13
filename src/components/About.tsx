@@ -1,7 +1,11 @@
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 
-export default function About() {
+interface AboutProps {
+  onNavigate: (page: 'about') => void;
+}
+
+export default function About({ onNavigate }: AboutProps) {
   return (
     <section className="py-32 px-6 max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
@@ -51,6 +55,7 @@ export default function About() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
+            onClick={() => onNavigate('about')}
             className="mt-12 flex items-center gap-3 text-xs font-bold tracking-widest uppercase border-b-2 border-brand-red pb-2 hover:gap-6 transition-all"
           >
             Descobrir a nossa história <ArrowRight size={16} />

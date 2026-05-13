@@ -4,8 +4,8 @@ import { motion } from 'motion/react';
 import Logo from './Logo';
 
 interface HeaderProps {
-  onNavigate: (page: 'home' | 'store') => void;
-  currentPage: 'home' | 'store';
+  onNavigate: (page: 'home' | 'store' | 'about') => void;
+  currentPage: 'home' | 'store' | 'about';
   cartCount: number;
   onOpenCart: () => void;
 }
@@ -26,8 +26,8 @@ export default function Header({ onNavigate, currentPage, cartCount, onOpenCart 
             Loja
           </button>
           <button 
-            onClick={() => onNavigate('home')}
-            className={`transition-colors hover:text-brand-red ${currentPage === 'home' ? 'text-brand-red border-b-2 border-brand-red pb-1' : ''}`}
+            onClick={() => onNavigate('about')}
+            className={`transition-colors hover:text-brand-red ${currentPage === 'about' ? 'text-brand-red border-b-2 border-brand-red pb-1' : ''}`}
           >
             Quem somos
           </button>

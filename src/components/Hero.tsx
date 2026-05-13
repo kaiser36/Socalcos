@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 
 interface HeroProps {
-  onNavigate: (page: 'home' | 'store') => void;
+  onNavigate: (page: 'home' | 'store' | 'about') => void;
 }
 
 export default function Hero({ onNavigate }: HeroProps) {
