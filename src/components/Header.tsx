@@ -1,16 +1,27 @@
-import { Search, ShoppingCart, User } from 'lucide-react';
+import { Search, ShoppingCart, User, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useAuth } from '../context/AuthContext';
 
 import Logo from './Logo';
 
 interface HeaderProps {
-  onNavigate: (page: 'home' | 'store' | 'about') => void;
-  currentPage: 'home' | 'store' | 'about';
+  onNavigate: (page: any) => void;
+  currentPage: string;
   cartCount: number;
   onOpenCart: () => void;
 }
 
 export default function Header({ onNavigate, currentPage, cartCount, onOpenCart }: HeaderProps) {
+  const { user, isAdmin } = useAuth();
+
+  const handleUserClick = () => {
+    if (user && isAdmin) {
+      onNavigate('admin');
+    } else {
+      onNavigate('login');
+    }
+  };
+
   return (
     <motion.header 
       initial={{ y: -20, opacity: 0 }}
@@ -54,8 +65,11 @@ export default function Header({ onNavigate, currentPage, cartCount, onOpenCart 
               </span>
             )}
           </button>
-          <button className="hover:text-brand-red transition-colors">
-            <User size={20} />
+          <button 
+            onClick={handleUserClick}
+            className={`transition-colors relative ${currentPage === 'login' || currentPage === 'admin' ? 'text-brand-red' : 'hover:text-brand-red text-brand-charcoal'}`}
+          >
+            {user && isAdmin ? <ShieldCheck size={20} /> : <User size={20} />}
           </button>
         </div>
       </div>
