@@ -15,8 +15,9 @@ export default function Header({ onNavigate, currentPage, cartCount, onOpenCart 
   const { user, isAdmin } = useAuth();
 
   const handleUserClick = () => {
-    if (user && isAdmin) {
-      onNavigate('admin');
+    if (user) {
+      if (isAdmin) onNavigate('admin');
+      else onNavigate('profile');
     } else {
       onNavigate('login');
     }
@@ -67,9 +68,13 @@ export default function Header({ onNavigate, currentPage, cartCount, onOpenCart 
           </button>
           <button 
             onClick={handleUserClick}
-            className={`transition-colors relative ${currentPage === 'login' || currentPage === 'admin' ? 'text-brand-red' : 'hover:text-brand-red text-brand-charcoal'}`}
+            className={`transition-colors relative ${currentPage === 'login' || currentPage === 'admin' || currentPage === 'profile' ? 'text-brand-red' : 'hover:text-brand-red text-brand-charcoal'}`}
           >
-            {user && isAdmin ? <ShieldCheck size={20} /> : <User size={20} />}
+            {user ? (
+              isAdmin ? <ShieldCheck size={20} /> : <User size={20} className="fill-brand-red/10" />
+            ) : (
+              <User size={20} />
+            )}
           </button>
         </div>
       </div>

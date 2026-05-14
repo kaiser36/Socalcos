@@ -22,6 +22,7 @@ import { CartItem, Product } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
+import ProfilePage from './components/auth/ProfilePage';
 
 export default function App() {
   return (
@@ -32,7 +33,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'login' | 'admin'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'login' | 'admin' | 'profile'>('home');
   const { user, isAdmin, loading } = useAuth();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -127,7 +128,7 @@ function AppContent() {
           />
         );
       case 'login':
-        return <LoginPage />;
+        return <LoginPage onNavigate={setCurrentPage} />;
       case 'admin':
         if (loading) return <div className="min-h-screen flex items-center justify-center font-serif">A carregar...</div>;
         if (!user || !isAdmin) {
@@ -135,6 +136,12 @@ function AppContent() {
           return null;
         }
         return <AdminDashboard />;
+      case 'profile':
+        if (!user) {
+          setCurrentPage('login');
+          return null;
+        }
+        return <ProfilePage />;
       default:
         return null;
     }

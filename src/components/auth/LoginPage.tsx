@@ -1,14 +1,31 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 
-export default function LoginPage() {
+export default function LoginPage({ onNavigate }: { onNavigate: (page: any) => void }) {
+  const { user, isAdmin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+
+  React.useEffect(() => {
+    if (user && loginSuccess) {
+      const timer = setTimeout(() => {
+        if (isAdmin) onNavigate('admin');
+        else onNavigate('home');
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (user) {
+      // Direct access redirect
+      if (isAdmin) onNavigate('admin');
+      else onNavigate('home');
+    }
+  }, [user, isAdmin, onNavigate, loginSuccess]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +48,7 @@ export default function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        setLoginSuccess(true);
       }
     } catch (err: any) {
       setError(err.message);
@@ -54,6 +72,12 @@ export default function LoginPage() {
             {isSignUp ? 'Junte-se à Socalcos e explore o Douro' : 'Introduza os seus dados para continuar'}
           </p>
         </div>
+
+        {loginSuccess && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-600 text-xs font-bold uppercase tracking-widest rounded-sm text-center">
+            Login realizado com sucesso!
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 bg-brand-red/5 border border-brand-red/20 text-brand-red text-xs font-medium rounded-sm">
