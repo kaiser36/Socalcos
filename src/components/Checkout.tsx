@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, ShieldCheck, CheckCircle2, Mail, Info, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { CartItem } from '../types';
 
@@ -11,6 +12,7 @@ interface CheckoutProps {
 }
 
 export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,6 +26,23 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
     pais: '',
     paymentMethod: 'email'
   });
+
+  React.useEffect(() => {
+    if (user) {
+      const names = (user.user_metadata?.full_name || '').split(' ');
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+        nome: names[0] || '',
+        apelido: names.slice(1).join(' ') || '',
+        telefone: user.user_metadata?.phone || '',
+        morada: user.user_metadata?.morada || '',
+        cidade: user.user_metadata?.cidade || '',
+        codigoPostal: user.user_metadata?.codigoPostal || '',
+        pais: user.user_metadata?.pais || ''
+      }));
+    }
+  }, [user]);
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = 0;

@@ -10,7 +10,11 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     fullName: user?.user_metadata?.full_name || '',
-    phone: user?.user_metadata?.phone || ''
+    phone: user?.user_metadata?.phone || '',
+    morada: user?.user_metadata?.morada || '',
+    cidade: user?.user_metadata?.cidade || '',
+    codigoPostal: user?.user_metadata?.codigoPostal || '',
+    pais: user?.user_metadata?.pais || ''
   });
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -21,7 +25,11 @@ export default function ProfilePage() {
     const { error } = await supabase.auth.updateUser({
       data: { 
         full_name: formData.fullName,
-        phone: formData.phone
+        phone: formData.phone,
+        morada: formData.morada,
+        cidade: formData.cidade,
+        codigoPostal: formData.codigoPostal,
+        pais: formData.pais
       }
     });
 
@@ -81,6 +89,48 @@ export default function ProfilePage() {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full bg-gray-50 border-none py-4 pl-12 pr-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6 pt-6 border-t border-gray-100">
+              <h3 className="text-sm font-serif text-brand-charcoal">Dados de Envio Padrão</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Morada</label>
+                  <input
+                    type="text"
+                    value={formData.morada}
+                    onChange={(e) => setFormData({ ...formData, morada: e.target.value })}
+                    className="w-full bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Cidade</label>
+                  <input
+                    type="text"
+                    value={formData.cidade}
+                    onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                    className="w-full bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Código Postal</label>
+                  <input
+                    type="text"
+                    value={formData.codigoPostal}
+                    onChange={(e) => setFormData({ ...formData, codigoPostal: e.target.value })}
+                    className="w-full bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">País</label>
+                  <input
+                    type="text"
+                    value={formData.pais}
+                    onChange={(e) => setFormData({ ...formData, pais: e.target.value })}
+                    className="w-full bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
                   />
                 </div>
               </div>
