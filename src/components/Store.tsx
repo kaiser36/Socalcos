@@ -1,11 +1,9 @@
-import { useState, useMemo } from 'react';
-import { Search, Filter, X, ChevronDown } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, X, ChevronDown, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { products } from '../data/products';
+import { supabase } from '../lib/supabase';
 import { Category, Product } from '../types';
 import ProductCard from './ProductCard';
-
-const CATEGORIES: Category[] = ['Vinho do Porto', 'Vinhos', 'Whisky', 'Destilados', 'Gourmet'];
 
 interface StoreProps {
   onSelectProduct: (id: string) => void;
@@ -13,18 +11,45 @@ interface StoreProps {
 }
 
 export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'Todos'>('Todos');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const [productsRes, categoriesRes] = await Promise.all([
+      supabase.from('products').select('*').eq('published', true),
+      supabase.from('categories').select('*').is('parent_id', null) // Fetch only main categories for top level
+    ]);
+
+    if (productsRes.data) setDbProducts(productsRes.data);
+    if (categoriesRes.data) setCategories(categoriesRes.data);
+    setLoading(false);
+  };
+
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    return dbProducts.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             product.region.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory || product.category_id === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [dbProducts, searchQuery, selectedCategory]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-brand-red" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="pt-32 pb-24 px-6 max-w-7xl mx-auto">
@@ -67,13 +92,13 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
               >
                 Todos
               </button>
-              {CATEGORIES.map(cat => (
+              {categories.map(cat => (
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`text-left text-sm font-sans transition-all hover:pl-2 ${selectedCategory === cat ? 'text-brand-red font-bold underline underline-offset-4' : 'text-gray-600 hover:text-brand-charcoal'}`}
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`text-left text-sm font-sans transition-all hover:pl-2 ${selectedCategory === cat.id ? 'text-brand-red font-bold underline underline-offset-4' : 'text-gray-600 hover:text-brand-charcoal'}`}
                 >
-                  {cat}
+                  {cat.name}
                 </button>
               ))}
             </div>
@@ -115,13 +140,13 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
                 >
                   Todos
                 </button>
-                {CATEGORIES.map(cat => (
+                {categories.map(cat => (
                   <button
-                    key={cat}
-                    onClick={() => { setSelectedCategory(cat); setIsFilterOpen(false); }}
-                    className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === cat ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
+                    key={cat.id}
+                    onClick={() => { setSelectedCategory(cat.id); setIsFilterOpen(false); }}
+                    className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === cat.id ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
                   >
-                    {cat}
+                    {cat.name}
                   </button>
                 ))}
               </div>

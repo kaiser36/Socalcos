@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, ShieldCheck, CheckCircle2, Mail, Info } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, CheckCircle2, Mail, Info, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { CartItem } from '../types';
 
 interface CheckoutProps {
@@ -11,6 +12,7 @@ interface CheckoutProps {
 
 export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     nome: '',
@@ -34,13 +36,53 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step < 2) {
       setStep(step + 1);
       window.scrollTo(0, 0);
     } else {
-      onComplete();
+      setLoading(true);
+      try {
+        // 1. Create order
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            customer_name: `${formData.nome} ${formData.apelido}`,
+            customer_email: formData.email,
+            customer_phone: formData.telefone,
+            address: formData.morada,
+            city: formData.cidade,
+            postal_code: formData.codigoPostal,
+            country: formData.pais,
+            total: total,
+            status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (orderError) throw orderError;
+
+        // 2. Create order items
+        const orderItems = items.map(item => ({
+          order_id: order.id,
+          product_id: item.id,
+          quantity: item.quantity,
+          price: item.price
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+
+        if (itemsError) throw itemsError;
+
+        onComplete();
+      } catch (err: any) {
+        alert('Erro ao processar pedido: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -196,9 +238,10 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
               )}
               <button 
                 type="submit"
-                className="ml-auto bg-brand-red text-white px-12 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-brand-red/90 transition-all rounded-sm shadow-lg shadow-brand-red/20"
+                disabled={loading}
+                className="ml-auto bg-brand-red text-white px-12 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-brand-red/90 transition-all rounded-sm shadow-lg shadow-brand-red/20 disabled:opacity-50"
               >
-                {step === 1 ? 'Continuar para Confirmação' : 'Finalizar Pedido'}
+                {loading ? <Loader2 className="animate-spin" size={18} /> : (step === 1 ? 'Continuar para Confirmação' : 'Finalizar Pedido')}
               </button>
             </div>
           </form>

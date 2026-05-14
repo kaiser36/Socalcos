@@ -2,7 +2,7 @@ import { Instagram, Facebook } from 'lucide-react';
 
 import Logo from './Logo';
 
-export default function Footer() {
+export default function Footer({ onNavigate }: { onNavigate: (page: any) => void }) {
   return (
     <footer className="bg-white pt-24 pb-12 border-t border-brand-charcoal/5">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-24">
@@ -16,8 +16,9 @@ export default function Footer() {
         <div>
           <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-8">Explorar</h4>
           <ul className="space-y-4 text-sm font-sans text-brand-charcoal">
-            <li><a href="#" className="hover:text-brand-red transition-colors">Quem Somos</a></li>
-            <li><a href="#" className="hover:text-brand-red transition-colors">Galeria</a></li>
+            <li><button onClick={() => onNavigate('about')} className="hover:text-brand-red transition-colors text-left">Quem Somos</button></li>
+            <li><button onClick={() => onNavigate('home')} className="hover:text-brand-red transition-colors text-left">Galeria</button></li>
+            <li><button onClick={() => onNavigate('admin')} className="hover:text-brand-red transition-colors text-left opacity-30 hover:opacity-100">Backoffice</button></li>
           </ul>
         </div>
 

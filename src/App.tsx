@@ -19,9 +19,21 @@ import Checkout from './components/Checkout';
 import Success from './components/Success';
 import { products } from './data/products';
 import { CartItem, Product } from './types';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './components/auth/LoginPage';
+import AdminDashboard from './components/admin/AdminDashboard';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about'>('home');
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
+  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'login' | 'admin'>('home');
+  const { user, isAdmin, loading } = useAuth();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -114,10 +126,23 @@ export default function App() {
             onGoStore={() => setCurrentPage('store')}
           />
         );
+      case 'login':
+        return <LoginPage />;
+      case 'admin':
+        if (loading) return <div className="min-h-screen flex items-center justify-center font-serif">A carregar...</div>;
+        if (!user || !isAdmin) {
+          setCurrentPage('login');
+          return null;
+        }
+        return <AdminDashboard />;
       default:
         return null;
     }
   };
+
+  if (currentPage === 'admin' && user && isAdmin) {
+    return <AdminDashboard />;
+  }
 
   return (
     <div className="min-h-screen">
@@ -130,7 +155,7 @@ export default function App() {
       <main>
         {view()}
       </main>
-      <Footer />
+      <Footer onNavigate={setCurrentPage} />
       
       <CartDrawer 
         isOpen={isCartOpen}
