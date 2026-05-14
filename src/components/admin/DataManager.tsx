@@ -8,8 +8,9 @@ const TABLES = [
     id: 'products', 
     name: 'Produtos', 
     columns: [
-      'name', 'sku', 'description', 'price', 'weight', 'category_id', 'producer', 
-      'region', 'harvest', 'capacity', 'alcohol_content', 'stock', 'tax_rate', 'image', 'published'
+      'name', 'sku', 'description', 'price', 'weight', 'category_id', 'subcategory_ids', 
+      'producer', 'property', 'region', 'country', 'harvest', 'capacity', 
+      'alcohol_content', 'allergens', 'stock', 'tax_rate', 'image', 'published'
     ] 
   },
   { 
@@ -84,8 +85,12 @@ export default function DataManager() {
           const cleanedData = results.data.map((row: any) => {
             const newRow = { ...row };
             Object.keys(newRow).forEach(key => {
-              if (newRow[key] === '') {
+              if (newRow[key] === '' || newRow[key] === undefined) {
                 newRow[key] = null;
+              } else if (key === 'subcategory_ids' && typeof newRow[key] === 'string') {
+                // Convert comma-separated string to Postgres array format {uuid,uuid}
+                const ids = newRow[key].split(',').map((s: string) => s.trim()).filter(Boolean);
+                newRow[key] = ids.length > 0 ? ids : null;
               }
             });
             return newRow;
