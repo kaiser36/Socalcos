@@ -101,8 +101,53 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
   }, [product, isOpen]);
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from('categories').select('*');
+    const { data } = await supabase.from('categories').select('*').order('name');
     if (data) setCategories(data);
+  };
+
+  const renderSubcategoryLevels = (parentId: string, depth = 1) => {
+    const subcategories = categories.filter(c => c.parent_id === parentId);
+    if (subcategories.length === 0) return null;
+
+    return (
+      <div className="space-y-4">
+        <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
+          <ListTree size={12} /> {depth === 1 ? 'Sub-Categorias' : `Nível ${depth}`}
+        </label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50/30 p-4 rounded-sm border border-gray-100/50">
+          {subcategories.map(cat => {
+            const isSelected = formData.subcategory_ids?.includes(cat.id);
+            return (
+              <div key={cat.id} className="space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div 
+                    onClick={() => {
+                      const current = formData.subcategory_ids || [];
+                      const next = isSelected 
+                        ? current.filter(id => id !== cat.id)
+                        : [...current, cat.id];
+                      setFormData({ ...formData, subcategory_ids: next });
+                    }}
+                    className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${isSelected ? 'bg-brand-red border-brand-red text-white' : 'bg-white border-gray-200 group-hover:border-brand-red/30'}`}
+                  >
+                    {isSelected && <CheckCircle2 size={12} />}
+                  </div>
+                  <span className={`text-xs transition-colors ${isSelected ? 'text-brand-charcoal font-bold' : 'text-gray-400'}`}>{cat.name}</span>
+                </label>
+              </div>
+            );
+          })}
+        </div>
+        {/* Render next level for each selected subcategory that has children */}
+        {subcategories
+          .filter(cat => formData.subcategory_ids?.includes(cat.id))
+          .map(cat => (
+            <div key={`level-${cat.id}`} className="ml-6 border-l-2 border-gray-50 pl-6 mt-4">
+              {renderSubcategoryLevels(cat.id, depth + 1)}
+            </div>
+          ))}
+      </div>
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -266,52 +311,29 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
                           className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-4 px-4 outline-none transition-all font-mono text-sm rounded-sm"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
-                          <Layers size={12} /> Categoria de Venda
-                        </label>
-                        <select
-                          value={formData.category_id}
-                          onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                          className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-4 px-4 outline-none transition-all font-sans text-sm rounded-sm appearance-none"
-                        >
-                          <option value="">Selecionar...</option>
-                          {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
-                          <ListTree size={12} /> Sub-Categorias (Múltiplas)
-                        </label>
-                        <div className="grid grid-cols-2 gap-3 bg-gray-50/50 p-4 rounded-sm border border-transparent focus-within:bg-white focus-within:border-gray-100 transition-all">
-                          {categories
-                            .filter(c => c.parent_id === formData.category_id)
-                            .map(cat => {
-                              const isSelected = formData.subcategory_ids?.includes(cat.id);
-                              return (
-                                <label key={cat.id} className="flex items-center gap-3 cursor-pointer group">
-                                  <div 
-                                    onClick={() => {
-                                      const current = formData.subcategory_ids || [];
-                                      const next = isSelected 
-                                        ? current.filter(id => id !== cat.id)
-                                        : [...current, cat.id];
-                                      setFormData({ ...formData, subcategory_ids: next });
-                                    }}
-                                    className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${isSelected ? 'bg-brand-red border-brand-red text-white' : 'bg-white border-gray-200 group-hover:border-brand-red/30'}`}
-                                  >
-                                    {isSelected && <CheckCircle2 size={12} />}
-                                  </div>
-                                  <span className={`text-xs transition-colors ${isSelected ? 'text-brand-charcoal font-bold' : 'text-gray-400'}`}>{cat.name}</span>
-                                </label>
-                              );
-                            })}
-                          {categories.filter(c => c.parent_id === formData.category_id).length === 0 && (
-                            <p className="text-[10px] text-gray-400 italic col-span-2">Selecione uma categoria principal para ver as sub-categorias.</p>
-                          )}
+                      <div className="md:col-span-2 space-y-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
+                            <Layers size={12} /> Categoria Principal
+                          </label>
+                          <select
+                            value={formData.category_id}
+                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value, subcategory_ids: [] })}
+                            className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-4 px-4 outline-none transition-all font-sans text-sm rounded-sm appearance-none"
+                          >
+                            <option value="">Selecionar Categoria...</option>
+                            {categories.filter(c => !c.parent_id).map(cat => (
+                              <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                          </select>
                         </div>
+
+                        {/* Recursive Subcategory levels */}
+                        {formData.category_id && (
+                          <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                            {renderSubcategoryLevels(formData.category_id)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
