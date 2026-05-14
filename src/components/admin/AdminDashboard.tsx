@@ -19,12 +19,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Product } from '../../types';
+import ProductModal from './ProductModal';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'overview'>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { signOut } = useAuth();
 
   useEffect(() => {
@@ -109,7 +112,10 @@ export default function AdminDashboard() {
           </div>
           
           {activeTab === 'products' && (
-            <button className="bg-brand-red text-white px-6 py-3 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all flex items-center gap-2 shadow-lg shadow-brand-red/10">
+            <button 
+              onClick={() => { setSelectedProduct(null); setIsModalOpen(true); }}
+              className="bg-brand-red text-white px-6 py-3 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all flex items-center gap-2 shadow-lg shadow-brand-red/10"
+            >
               <Plus size={16} /> Novo Produto
             </button>
           )}
@@ -180,7 +186,12 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 text-sm font-medium text-brand-charcoal">{formatPrice(product.price)}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button className="p-2 text-gray-400 hover:text-brand-red transition-colors"><Edit2 size={16} /></button>
+                        <button 
+                          onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}
+                          className="p-2 text-gray-400 hover:text-brand-red transition-colors"
+                        >
+                          <Edit2 size={16} />
+                        </button>
                         <button 
                           onClick={() => deleteProduct(product.id)}
                           className="p-2 text-gray-400 hover:text-brand-red transition-colors"
@@ -249,6 +260,13 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
+
+      <ProductModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={fetchData}
+        product={selectedProduct}
+      />
     </div>
   );
 }
