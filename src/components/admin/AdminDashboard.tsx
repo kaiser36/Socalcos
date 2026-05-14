@@ -15,14 +15,21 @@ import {
   CheckCircle2,
   XCircle,
   TrendingUp,
-  LayoutDashboard
+  LayoutDashboard,
+  Layers,
+  ShoppingCart,
+  Database,
+  Download,
+  UploadCloud
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Product } from '../../types';
 import ProductModal from './ProductModal';
+import CategoryManager from './CategoryManager';
+import DataManager from './DataManager';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'overview'>('overview');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'overview' | 'data'>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,18 +82,34 @@ export default function AdminDashboard() {
           >
             <LayoutDashboard size={18} /> Resumo
           </button>
-          <button 
-            onClick={() => setActiveTab('products')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-sm transition-all ${activeTab === 'products' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            <Package size={18} /> Produtos
-          </button>
-          <button 
-            onClick={() => setActiveTab('orders')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-sm transition-all ${activeTab === 'orders' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            <ShoppingBag size={18} /> Encomendas
-          </button>
+            <button 
+              onClick={() => setActiveTab('products')}
+              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'products' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
+            >
+              <Package size={20} />
+              <span className="text-xs font-bold tracking-widest uppercase">Produtos</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('categories')}
+              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'categories' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
+            >
+              <Layers size={20} />
+              <span className="text-xs font-bold tracking-widest uppercase">Categorias</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('orders')}
+              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'orders' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
+            >
+              <ShoppingCart size={20} />
+              <span className="text-xs font-bold tracking-widest uppercase">Encomendas</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('data')}
+              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'data' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
+            >
+              <Database size={20} />
+              <span className="text-xs font-bold tracking-widest uppercase">Importar/Exportar</span>
+            </button>
         </nav>
 
         <div className="p-4 mt-auto border-t border-white/5">
@@ -103,12 +126,20 @@ export default function AdminDashboard() {
       <main className="ml-64 flex-1 p-12">
         <header className="flex justify-between items-center mb-12">
           <div>
-            <h2 className="text-3xl font-serif text-brand-charcoal">
-              {activeTab === 'overview' && 'Bem-vindo, Admin'}
-              {activeTab === 'products' && 'Gestão de Produtos'}
-              {activeTab === 'orders' && 'Gestão de Encomendas'}
-            </h2>
-            <p className="text-sm text-gray-400 mt-1">Dashboard Administrativo</p>
+            <h1 className="text-3xl font-serif text-brand-charcoal">
+              {activeTab === 'overview' ? 'Painel de Controlo' : 
+               activeTab === 'products' ? 'Gestão de Produtos' : 
+               activeTab === 'categories' ? 'Estrutura de Categorias' :
+               activeTab === 'data' ? 'Importar & Exportar Dados' :
+               'Gestão de Encomendas'}
+            </h1>
+            <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">
+              {activeTab === 'overview' ? 'Resumo da atividade da loja' : 
+               activeTab === 'products' ? 'Administrar catálogo e stock' : 
+               activeTab === 'categories' ? 'Organizar hierarquia de produtos' :
+               activeTab === 'data' ? 'Gestão em massa via ficheiros CSV' :
+               'Monitorizar vendas e envios'}
+            </p>
           </div>
           
           {activeTab === 'products' && (
@@ -206,6 +237,10 @@ export default function AdminDashboard() {
             </table>
           </div>
         )}
+
+        {activeTab === 'categories' && <CategoryManager />}
+
+        {activeTab === 'data' && <DataManager />}
 
         {activeTab === 'orders' && (
           <div className="bg-white border border-gray-100 rounded-sm shadow-sm overflow-hidden">

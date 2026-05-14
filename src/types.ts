@@ -14,8 +14,8 @@ export interface Product {
   weight: number;
   published: boolean;
   image: string;
-  category_id?: string;
-  subcategory_id?: string;
+   category_id?: string;
+   subcategory_ids?: string[];
   category?: string; // For backward compatibility or joining
   producer?: string;
   property?: string;
