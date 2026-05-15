@@ -57,6 +57,12 @@ export default function Header({
           >
             Quem somos
           </button>
+          <button 
+            onClick={() => onNavigate('location')}
+            className={`transition-colors hover:text-brand-red ${currentPage === 'location' ? 'text-brand-red border-b-2 border-brand-red pb-1' : ''}`}
+          >
+            Localização
+          </button>
         </nav>
 
         <div className="flex-1 flex justify-center">

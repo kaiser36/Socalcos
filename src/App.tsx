@@ -12,7 +12,12 @@ import About from './components/About';
 import AboutPage from './components/AboutPage';
 import Gallery from './components/Gallery';
 import GalleryPage from './components/GalleryPage';
+import LocationPage from './components/LocationPage';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsConditions from './components/TermsConditions';
 import Testimonials from './components/Testimonials';
+import AgeGate from './components/AgeGate';
+import CookieBanner from './components/CookieBanner';
 import Footer from './components/Footer';
 import Store from './components/Store';
 import ProductDetail from './components/ProductDetail';
@@ -35,7 +40,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'gallery' | 'login' | 'admin' | 'profile'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'gallery' | 'location' | 'login' | 'admin' | 'profile'>('home');
 
   const handleNavigate = (page: any) => {
     if (page === 'home') {
@@ -175,6 +180,12 @@ function AppContent() {
         return <AboutPage />;
       case 'gallery':
         return <GalleryPage />;
+      case 'location':
+        return <LocationPage />;
+      case 'privacy':
+        return <PrivacyPolicy />;
+      case 'terms':
+        return <TermsConditions />;
       case 'store':
         return (
           <Store 
@@ -233,6 +244,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen">
+      <AgeGate />
       <Header 
         onNavigate={handleNavigate} 
         currentPage={currentPage === 'detail' || currentPage === 'checkout' || currentPage === 'success' ? 'store' : currentPage} 
@@ -247,6 +259,7 @@ function AppContent() {
         {view()}
       </main>
       <Footer onNavigate={handleNavigate} />
+      <CookieBanner />
       
       <CartDrawer 
         isOpen={isCartOpen}
