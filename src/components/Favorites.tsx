@@ -8,8 +8,10 @@ interface FavoritesProps {
 }
 
 export default function Favorites({ onSelectProduct, onAddToCart, products }: FavoritesProps & { products: Product[] }) {
-  const favorites = products.filter(p => p.is_favorite && p.published);
-  const featuredProducts = favorites.length > 0 ? favorites : products.filter(p => p.published).slice(0, 4);
+  // Ensure we catch both boolean and truthy values from DB
+  const favorites = products.filter(p => (p.is_favorite === true || p.is_favorite === 1 || p.is_favorite === 'true') && p.published);
+  // Show all favorites, or fallback to first 8 if none selected
+  const featuredProducts = favorites.length > 0 ? favorites : products.filter(p => p.published).slice(0, 8);
 
   if (featuredProducts.length === 0) return null;
   return (

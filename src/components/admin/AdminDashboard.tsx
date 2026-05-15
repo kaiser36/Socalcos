@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
   const [heroImageUrl, setHeroImageUrl] = useState('');
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const { signOut } = useAuth();
 
   const [stats, setStats] = useState({ products: 0, orders: 0, totalSales: 0 });
@@ -64,6 +65,10 @@ export default function AdminDashboard() {
     
     if (adminSearchQuery) {
       query = query.or(`name.ilike.%${adminSearchQuery}%,sku.ilike.%${adminSearchQuery}%,producer.ilike.%${adminSearchQuery}%`);
+    }
+
+    if (showOnlyFavorites) {
+      query = query.eq('is_favorite', true);
     }
 
     const [productsRes, ordersRes, categoriesRes] = await Promise.all([
@@ -108,20 +113,32 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [adminSearchQuery, selectedCategoryFilter]);
+  }, [adminSearchQuery, selectedCategoryFilter, showOnlyFavorites]);
 
   useEffect(() => {
     fetchData();
-  }, [currentPage, adminSearchQuery, selectedCategoryFilter]);
+  }, [currentPage, adminSearchQuery, selectedCategoryFilter, showOnlyFavorites]);
 
   const filteredProducts = products; // Already filtered server-side
 
   const toggleFavorite = async (product: Product) => {
+    // Optimistic update
+    setProducts(prev => prev.map(p => 
+      p.id === product.id ? { ...p, is_favorite: !p.is_favorite } : p
+    ));
+
     const { error } = await supabase
       .from('products')
       .update({ is_favorite: !product.is_favorite })
       .eq('id', product.id);
-    if (!error) fetchData();
+    
+    if (error) {
+      // Revert if error
+      setProducts(prev => prev.map(p => 
+        p.id === product.id ? { ...p, is_favorite: product.is_favorite } : p
+      ));
+      alert('Erro ao atualizar favorito: ' + error.message);
+    }
   };
 
   const deleteProduct = async (id: string) => {
@@ -288,6 +305,14 @@ export default function AdminDashboard() {
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
+              
+              <button 
+                onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-sm border transition-all text-[10px] font-bold tracking-widest uppercase ${showOnlyFavorites ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white text-gray-400 border-gray-100 hover:border-brand-gold hover:text-brand-gold'}`}
+              >
+                <Plus size={14} className={showOnlyFavorites ? 'fill-current' : ''} />
+                {showOnlyFavorites ? 'Ver Todos' : 'Ver Favoritos'}
+              </button>
               <div className="flex items-center gap-2 px-4 border-l border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 {filteredProducts.length} Produtos
               </div>

@@ -34,6 +34,14 @@ export default function App() {
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'login' | 'admin' | 'profile'>('home');
+
+  const handleNavigate = (page: any) => {
+    if (page === 'home') {
+      fetchSettings();
+      fetchData();
+    }
+    setCurrentPage(page);
+  };
   const { user, isAdmin, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -129,10 +137,10 @@ function AppContent() {
       case 'home':
         return (
           <>
-            <Hero onNavigate={setCurrentPage} backgroundImage={siteSettings.heroImage} />
+            <Hero onNavigate={handleNavigate} backgroundImage={siteSettings.heroImage} />
             <Categories categories={categories} />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
-            <About onNavigate={setCurrentPage} />
+            <About onNavigate={handleNavigate} />
             <Gallery />
           </>
         );
@@ -171,7 +179,7 @@ function AppContent() {
           />
         );
       case 'login':
-        return <LoginPage onNavigate={setCurrentPage} />;
+        return <LoginPage onNavigate={handleNavigate} />;
       case 'admin':
         if (authLoading) return <div className="min-h-screen flex items-center justify-center font-serif">A carregar...</div>;
         if (!user || !isAdmin) {
@@ -197,7 +205,7 @@ function AppContent() {
   return (
     <div className="min-h-screen">
       <Header 
-        onNavigate={setCurrentPage} 
+        onNavigate={handleNavigate} 
         currentPage={currentPage === 'detail' || currentPage === 'checkout' || currentPage === 'success' ? 'store' : currentPage} 
         cartCount={cartCount}
         onOpenCart={() => setIsCartOpen(true)}
@@ -209,7 +217,7 @@ function AppContent() {
       <main>
         {view()}
       </main>
-      <Footer onNavigate={setCurrentPage} />
+      <Footer onNavigate={handleNavigate} />
       
       <CartDrawer 
         isOpen={isCartOpen}
