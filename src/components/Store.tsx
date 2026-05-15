@@ -17,6 +17,8 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(externalSearch || '');
+  const [totalProductsCount, setTotalProductsCount] = useState(0);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (externalSearch !== undefined && externalSearch !== searchQuery) {
@@ -41,8 +43,39 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
   const itemsPerPage = 24;
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Only run this once categories are loaded
+    if (categories.length === 0) return;
+
+    const fetchCounts = async () => {
+      // 1. Fetch total count
+      const { count: total } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('published', true);
+      
+      if (total !== null) setTotalProductsCount(total);
+
+      // 2. Fetch count for each main category
+      const mainCategories = categories.filter(c => !c.parent_id);
+      const counts: Record<string, number> = {};
+      
+      await Promise.all(
+        mainCategories.map(async (cat) => {
+          const { count } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', cat.id)
+            .eq('published', true);
+            
+          counts[cat.id] = count || 0;
+        })
+      );
+      
+      setCategoryCounts(counts);
+    };
+
+    fetchCounts();
+  }, [categories]);
 
   const fetchData = async (reset = false) => {
     if (reset) {
@@ -168,7 +201,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                   className={`text-left text-sm font-sans transition-all flex items-center justify-between group ${selectedCategory === 'Todos' ? 'text-brand-red font-bold' : 'text-gray-500 hover:text-brand-charcoal'}`}
                 >
                   <span className="flex items-center gap-2"><Layers size={14} className="opacity-40" /> Todos</span>
-                  <span className="text-[10px] opacity-40">({dbProducts.length})</span>
+                  <span className="text-[10px] opacity-40">({totalProductsCount})</span>
                 </button>
                 {categories.filter(c => !c.parent_id).map(cat => (
                   <div key={cat.id} className="space-y-3">
@@ -177,7 +210,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                       className={`w-full text-left text-sm font-sans transition-all flex items-center justify-between group ${selectedCategory === cat.id ? 'text-brand-red font-bold' : 'text-gray-500 hover:text-brand-charcoal'}`}
                     >
                       <span>{cat.name}</span>
-                      <span className="text-[10px] opacity-40">({dbProducts.filter(p => p.category_id === cat.id).length})</span>
+                      <span className="text-[10px] opacity-40">({categoryCounts[cat.id] || 0})</span>
                     </button>
                     
                     {/* Sub-categorias dinâmicas no mesmo bloco */}
