@@ -43,10 +43,20 @@ function AppContent() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [siteSettings, setSiteSettings] = useState({ heroImage: '/images/hero-banner.jpg' });
 
   useEffect(() => {
     fetchData();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    const { data } = await supabase.from('site_settings').select('*');
+    if (data) {
+      const hero = data.find(s => s.key === 'hero_image')?.value;
+      if (hero) setSiteSettings(prev => ({ ...prev, heroImage: hero }));
+    }
+  };
 
   const fetchData = async () => {
     setDataLoading(true);
@@ -119,7 +129,7 @@ function AppContent() {
       case 'home':
         return (
           <>
-            <Hero onNavigate={setCurrentPage} />
+            <Hero onNavigate={setCurrentPage} backgroundImage={siteSettings.heroImage} />
             <Categories categories={categories} />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
             <About onNavigate={setCurrentPage} />

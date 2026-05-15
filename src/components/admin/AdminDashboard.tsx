@@ -29,7 +29,7 @@ import CategoryManager from './CategoryManager';
 import DataManager from './DataManager';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'overview' | 'data'>('overview');
+  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'overview' | 'data' | 'settings'>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
+  const [heroImageUrl, setHeroImageUrl] = useState('');
   const { signOut } = useAuth();
 
   const [stats, setStats] = useState({ products: 0, orders: 0, totalSales: 0 });
@@ -80,6 +81,28 @@ export default function AdminDashboard() {
     if (categoriesRes.data) setCategories(categoriesRes.data);
     if (productsRes.count !== null) setStats(prev => ({ ...prev, products: productsRes.count }));
     
+    // Fetch settings
+    const { data: settingsData } = await supabase.from('site_settings').select('*');
+    if (settingsData) {
+      const hero = settingsData.find(s => s.key === 'hero_image')?.value;
+      if (hero) setHeroImageUrl(hero);
+    }
+
+    setLoading(false);
+  };
+
+  const saveSettings = async () => {
+    setLoading(true);
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({ key: 'hero_image', value: heroImageUrl }, { onConflict: 'key' });
+    
+    if (!error) {
+      alert('Definições guardadas com sucesso!');
+      window.location.reload();
+    } else {
+      alert('Erro ao guardar: ' + error.message);
+    }
     setLoading(false);
   };
 
@@ -92,6 +115,14 @@ export default function AdminDashboard() {
   }, [currentPage, adminSearchQuery, selectedCategoryFilter]);
 
   const filteredProducts = products; // Already filtered server-side
+
+  const toggleFavorite = async (product: Product) => {
+    const { error } = await supabase
+      .from('products')
+      .update({ is_favorite: !product.is_favorite })
+      .eq('id', product.id);
+    if (!error) fetchData();
+  };
 
   const deleteProduct = async (id: string) => {
     if (!confirm('Tem a certeza que deseja eliminar este produto?')) return;
@@ -149,6 +180,13 @@ export default function AdminDashboard() {
             >
               <Database size={20} />
               <span className="text-xs font-bold tracking-widest uppercase">Importar/Exportar</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'settings' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
+            >
+              <Settings size={20} />
+              <span className="text-xs font-bold tracking-widest uppercase">Definições</span>
             </button>
         </nav>
 
@@ -259,6 +297,7 @@ export default function AdminDashboard() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 w-10 text-center">Fav</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Produto / SKU</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Estado</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Preço</th>
@@ -269,10 +308,14 @@ export default function AdminDashboard() {
                 {filteredProducts.map((product) => (
                   <tr 
                     key={product.id} 
-                    onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}
                     className="hover:bg-brand-red/[0.02] transition-colors cursor-pointer group"
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center" onClick={(e) => { e.stopPropagation(); toggleFavorite(product); }}>
+                      <button className={`transition-all ${product.is_favorite ? 'text-brand-gold scale-125' : 'text-gray-200 hover:text-brand-gold'}`}>
+                        <Plus size={18} className={product.is_favorite ? 'fill-current' : ''} />
+                      </button>
+                    </td>
+                    <td className="px-6 py-4" onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}>
                       <div className="flex items-center gap-4">
                         <img src={product.image} className="w-10 h-12 object-cover rounded-sm border border-gray-100" />
                         <div>
@@ -340,6 +383,32 @@ export default function AdminDashboard() {
         {activeTab === 'categories' && <CategoryManager />}
 
         {activeTab === 'data' && <DataManager />}
+
+        {activeTab === 'settings' && (
+          <div className="bg-white p-12 border border-gray-100 rounded-sm shadow-sm max-w-4xl">
+            <h2 className="text-xl font-serif text-brand-charcoal mb-8">Definições do Site</h2>
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">URL da Imagem do Banner (Hero)</label>
+                <input 
+                  type="text"
+                  placeholder="https://images.unsplash.com/..."
+                  value={heroImageUrl}
+                  onChange={(e) => setHeroImageUrl(e.target.value)}
+                  className="w-full bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
+                />
+                <p className="text-[9px] text-gray-400 uppercase tracking-widest mt-1">Dica: Podes usar um link de uma imagem online ou do teu próprio servidor.</p>
+              </div>
+              <button 
+                onClick={saveSettings}
+                disabled={loading}
+                className="bg-brand-red text-white px-8 py-4 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all shadow-lg disabled:opacity-50"
+              >
+                {loading ? 'A guardar...' : 'Guardar Alterações'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'orders' && (
           <div className="bg-white border border-gray-100 rounded-sm shadow-sm overflow-hidden">

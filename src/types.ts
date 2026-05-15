@@ -29,6 +29,7 @@ export interface Product {
   stock: number;
   rating: number;
   vintage?: string; // Keeping for compatibility
+  is_favorite?: boolean;
 }
 
 export interface CartItem extends Product {

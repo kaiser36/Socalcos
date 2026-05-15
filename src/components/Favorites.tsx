@@ -8,9 +8,8 @@ interface FavoritesProps {
 }
 
 export default function Favorites({ onSelectProduct, onAddToCart, products }: FavoritesProps & { products: Product[] }) {
-  const featuredProducts = products
-    .filter(p => p.published)
-    .slice(0, 4);
+  const favorites = products.filter(p => p.is_favorite && p.published);
+  const featuredProducts = favorites.length > 0 ? favorites : products.filter(p => p.published).slice(0, 4);
 
   if (featuredProducts.length === 0) return null;
   return (
