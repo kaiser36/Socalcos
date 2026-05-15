@@ -89,9 +89,10 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
               </div>
             </div>
 
-            <p className="text-gray-600 leading-relaxed font-sans">
-              {product.description || "Uma expressão sublime do terroir excepcional da região. Este exemplar destaca-se pela sua estrutura refinada, equilíbrio impecável e um final longo e persistente que cativa os sentidos mais exigentes."}
-            </p>
+            <div 
+              className="text-gray-600 leading-relaxed font-sans text-sm"
+              dangerouslySetInnerHTML={{ __html: product.description || "Uma expressão sublime do terroir excepcional da região. Este exemplar destaca-se pela sua estrutura refinada, equilíbrio impecável e um final longo e persistente que cativa os sentidos mais exigentes." }}
+            />
           </div>
 
           {/* Add to Cart Controls */}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Search, Filter, X, ChevronDown, Loader2 } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, Loader2, MapPin, Users, Calendar, Box, Euro, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { Category, Product } from '../types';
@@ -16,6 +16,12 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('Todos');
+  const [selectedRegion, setSelectedRegion] = useState<string>('Todas');
+  const [selectedProducer, setSelectedProducer] = useState<string>('Todos');
+  const [selectedVintage, setSelectedVintage] = useState<string>('Todos');
+  const [selectedCapacity, setSelectedCapacity] = useState<string>('Todas');
+  const [maxPrice, setMaxPrice] = useState<number>(1000);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
@@ -26,22 +32,55 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
     setLoading(true);
     const [productsRes, categoriesRes] = await Promise.all([
       supabase.from('products').select('*').eq('published', true),
-      supabase.from('categories').select('*').is('parent_id', null) // Fetch only main categories for top level
+      supabase.from('categories').select('*').order('name')
     ]);
 
-    if (productsRes.data) setDbProducts(productsRes.data);
+    if (productsRes.data) {
+      setDbProducts(productsRes.data);
+      const highestPrice = Math.max(...productsRes.data.map(p => p.price), 1000);
+      setMaxPrice(highestPrice);
+    }
     if (categoriesRes.data) setCategories(categoriesRes.data);
     setLoading(false);
   };
 
+  const normalize = (str: string) => 
+    str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+
   const filteredProducts = useMemo(() => {
     return dbProducts.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            product.region.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'Todos' || product.category === selectedCategory || product.category_id === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const q = normalize(searchQuery);
+      const matchesSearch = !q || 
+                            normalize(product.name).includes(q) || 
+                            normalize(product.region).includes(q) ||
+                            normalize(product.producer).includes(q);
+      
+      const matchesCategory = selectedCategory === 'Todos' || product.category_id === selectedCategory;
+      const matchesSubcategory = selectedSubcategory === 'Todos' || (product.subcategory_ids && product.subcategory_ids.includes(selectedSubcategory));
+      const matchesRegion = selectedRegion === 'Todas' || product.region === selectedRegion;
+      const matchesProducer = selectedProducer === 'Todos' || product.producer === selectedProducer;
+      const matchesVintage = selectedVintage === 'Todos' || product.harvest === selectedVintage;
+      const matchesCapacity = selectedCapacity === 'Todas' || product.capacity === selectedCapacity;
+      const matchesPrice = product.price <= maxPrice;
+      
+      return matchesSearch && matchesCategory && matchesSubcategory && matchesRegion && 
+             matchesProducer && matchesVintage && matchesCapacity && matchesPrice;
     });
-  }, [dbProducts, searchQuery, selectedCategory]);
+  }, [dbProducts, searchQuery, selectedCategory, selectedSubcategory, selectedRegion, selectedProducer, selectedVintage, selectedCapacity, maxPrice]);
+
+  const uniqueValues = useMemo(() => {
+    return {
+      regions: Array.from(new Set(dbProducts.map(p => p.region).filter(Boolean))).sort(),
+      producers: Array.from(new Set(dbProducts.map(p => p.producer).filter(Boolean))).sort(),
+      vintages: Array.from(new Set(dbProducts.map(p => p.harvest).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
+      capacities: Array.from(new Set(dbProducts.map(p => p.capacity).filter(Boolean))).sort()
+    };
+  }, [dbProducts]);
+
+  const availableSubcategories = useMemo(() => {
+    if (selectedCategory === 'Todos') return [];
+    return categories.filter(c => c.parent_id === selectedCategory);
+  }, [categories, selectedCategory]);
 
   if (loading) {
     return (
@@ -64,15 +103,15 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Pesquisar vinho, região..."
+            placeholder="Pesquisar vinho, região, produtor..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-sm focus:outline-none focus:border-brand-red/30 transition-all text-sm font-sans"
+            className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-sm shadow-sm focus:outline-none focus:border-brand-red/30 focus:ring-1 focus:ring-brand-red/5 transition-all text-sm font-sans"
           />
           {searchQuery && (
             <button 
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-red"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-brand-red transition-colors"
             >
               <X size={16} />
             </button>
@@ -82,33 +121,165 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
 
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Desktop Sidebar Filters */}
-        <aside className="hidden lg:block w-64 space-y-10">
-          <div>
-            <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-6">Categorias</h3>
-            <div className="flex flex-col gap-4">
-              <button
-                onClick={() => setSelectedCategory('Todos')}
-                className={`text-left text-sm font-sans transition-all hover:pl-2 ${selectedCategory === 'Todos' ? 'text-brand-red font-bold underline underline-offset-4' : 'text-gray-600 hover:text-brand-charcoal'}`}
-              >
-                Todos
-              </button>
-              {categories.map(cat => (
+        <aside className="hidden lg:block w-72 space-y-8">
+          <div className="bg-white/40 backdrop-blur-md p-6 rounded-sm border border-gray-100 shadow-sm space-y-10">
+            {/* Categorias Principais */}
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-1 h-4 bg-brand-red rounded-full" />
+                <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Explorar</h3>
+              </div>
+              <div className="flex flex-col gap-3">
                 <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`text-left text-sm font-sans transition-all hover:pl-2 ${selectedCategory === cat.id ? 'text-brand-red font-bold underline underline-offset-4' : 'text-gray-600 hover:text-brand-charcoal'}`}
+                  onClick={() => { setSelectedCategory('Todos'); setSelectedSubcategory('Todos'); }}
+                  className={`text-left text-sm font-sans transition-all flex items-center justify-between group ${selectedCategory === 'Todos' ? 'text-brand-red font-bold' : 'text-gray-500 hover:text-brand-charcoal'}`}
                 >
-                  {cat.name}
+                  <span className="flex items-center gap-2"><Layers size={14} className="opacity-40" /> Todos</span>
+                  <span className="text-[10px] opacity-40">({dbProducts.length})</span>
                 </button>
-              ))}
+                {categories.filter(c => !c.parent_id).map(cat => (
+                  <div key={cat.id} className="space-y-3">
+                    <button
+                      onClick={() => { setSelectedCategory(cat.id); setSelectedSubcategory('Todos'); }}
+                      className={`w-full text-left text-sm font-sans transition-all flex items-center justify-between group ${selectedCategory === cat.id ? 'text-brand-red font-bold' : 'text-gray-500 hover:text-brand-charcoal'}`}
+                    >
+                      <span>{cat.name}</span>
+                      <span className="text-[10px] opacity-40">({dbProducts.filter(p => p.category_id === cat.id).length})</span>
+                    </button>
+                    
+                    {/* Sub-categorias dinâmicas no mesmo bloco */}
+                    {selectedCategory === cat.id && availableSubcategories.length > 0 && (
+                      <div className="flex flex-col gap-2 pl-4 border-l border-gray-100 mt-2 animate-in slide-in-from-top-1 duration-300">
+                        {availableSubcategories.map(sub => (
+                          <button
+                            key={sub.id}
+                            onClick={() => setSelectedSubcategory(sub.id)}
+                            className={`text-left text-xs font-sans transition-all ${selectedSubcategory === sub.id ? 'text-brand-red font-bold' : 'text-gray-400 hover:text-brand-charcoal'}`}
+                          >
+                            • {sub.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="pt-10 border-t border-gray-100">
-             <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-6">Informação</h3>
-             <p className="text-xs text-gray-500 leading-relaxed italic">
-               "Cada garrafa conta uma história das encostas acidentadas do Douro."
-             </p>
+            {/* Filtro por Região */}
+            <div className="pt-8 border-t border-gray-50">
+              <div className="flex items-center gap-2 mb-6">
+                <MapPin size={14} className="text-brand-red" />
+                <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Região</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  onClick={() => setSelectedRegion('Todas')}
+                  className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all rounded-full border ${selectedRegion === 'Todas' ? 'bg-brand-red border-brand-red text-white shadow-md' : 'bg-white border-gray-100 text-gray-400 hover:border-brand-red/30'}`}
+                >
+                  Todas
+                </button>
+                {uniqueValues.regions.map(region => (
+                  <button 
+                    key={region}
+                    onClick={() => setSelectedRegion(region)}
+                    className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all rounded-full border ${selectedRegion === region ? 'bg-brand-red border-brand-red text-white shadow-md' : 'bg-white border-gray-100 text-gray-400 hover:border-brand-red/30'}`}
+                  >
+                    {region}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filtro por Produtor */}
+            <div className="pt-8 border-t border-gray-50">
+              <div className="flex items-center gap-2 mb-6">
+                <Users size={14} className="text-brand-red" />
+                <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Produtor</h3>
+              </div>
+              <select
+                value={selectedProducer}
+                onChange={(e) => setSelectedProducer(e.target.value)}
+                className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-3 px-4 text-xs font-sans outline-none transition-all rounded-sm appearance-none cursor-pointer"
+              >
+                <option value="Todos">Todos os Produtores</option>
+                {uniqueValues.producers.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Preço e Ano */}
+            <div className="grid grid-cols-1 gap-8 pt-8 border-t border-gray-50">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Euro size={14} className="text-brand-red" />
+                    <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Preço Máx</h3>
+                  </div>
+                  <span className="text-xs font-bold text-brand-red">{new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(maxPrice)}</span>
+                </div>
+                <input 
+                  type="range"
+                  min="0"
+                  max={Math.max(...dbProducts.map(p => p.price), 1000)}
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-brand-red h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Calendar size={14} className="text-brand-red" />
+                    <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Ano</h3>
+                  </div>
+                  <select
+                    value={selectedVintage}
+                    onChange={(e) => setSelectedVintage(e.target.value)}
+                    className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-3 px-4 text-xs font-sans outline-none transition-all rounded-sm"
+                  >
+                    <option value="Todos">Todos</option>
+                    {uniqueValues.vintages.map(v => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Box size={14} className="text-brand-red" />
+                    <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Volume</h3>
+                  </div>
+                  <select
+                    value={selectedCapacity}
+                    onChange={(e) => setSelectedCapacity(e.target.value)}
+                    className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-3 px-4 text-xs font-sans outline-none transition-all rounded-sm"
+                  >
+                    <option value="Todas">Todas</option>
+                    {uniqueValues.capacities.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => {
+                setSelectedCategory('Todos');
+                setSelectedSubcategory('Todos');
+                setSelectedRegion('Todas');
+                setSelectedProducer('Todos');
+                setSelectedVintage('Todos');
+                setSelectedCapacity('Todas');
+                setMaxPrice(Math.max(...dbProducts.map(p => p.price), 1000));
+                setSearchQuery('');
+              }}
+              className="w-full py-4 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 hover:text-brand-red border-t border-gray-50 transition-colors"
+            >
+              Limpar Todos os Filtros
+            </button>
           </div>
         </aside>
 
