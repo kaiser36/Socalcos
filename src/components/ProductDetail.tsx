@@ -152,6 +152,11 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
                <button className="text-xs font-bold tracking-widest uppercase text-gray-400 pb-1">Notas de Prova</button>
                <button className="text-xs font-bold tracking-widest uppercase text-gray-400 pb-1">Envio</button>
              </div>
+             <div className="mt-12 pt-6 border-t border-gray-50">
+               <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-brand-red">
+                 Seja responsável. Beba com moderação.
+               </p>
+             </div>
           </div>
         </motion.div>
       </div>

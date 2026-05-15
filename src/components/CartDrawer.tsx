@@ -72,7 +72,7 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
                         </button>
                       </div>
                       <p className="text-[10px] text-gray-400 mb-4 font-sans tracking-tight">
-                        {item.region} • {item.vintage}
+                        {item.region || '-'} • {item.vintage || '-'} • IVA {item.tax_rate || 23}%
                       </p>
                       
                       <div className="flex items-center justify-between">
@@ -130,9 +130,14 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
                     <span className="text-gray-500">Envio</span>
                     <span className="text-brand-gold font-medium uppercase text-[10px] tracking-widest">Calculado no checkout</span>
                   </div>
-                  <div className="pt-4 border-t border-gray-200 flex justify-between">
-                    <span className="text-lg font-serif text-brand-charcoal">Total</span>
-                    <span className="text-xl font-serif text-brand-red">{formattedSubtotal}</span>
+                  <div className="pt-4 border-t border-gray-200 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-serif text-brand-charcoal">Total</span>
+                      <span className="text-xl font-serif text-brand-red">{formattedSubtotal}</span>
+                    </div>
+                    <div className="text-right text-[9px] uppercase tracking-widest text-gray-400 font-bold">
+                      (Inclui IVA à taxa em vigor)
+                    </div>
                   </div>
                 </div>
 

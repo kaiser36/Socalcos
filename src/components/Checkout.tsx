@@ -282,7 +282,7 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
                 <div className="flex-1">
                   <h4 className="text-xs font-serif text-brand-charcoal leading-tight mb-1">{item.name}</h4>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-gray-400">Qtd: {item.quantity}</span>
+                    <span className="text-[10px] text-gray-400">Qtd: {item.quantity} <span className="mx-1">•</span> IVA {item.tax_rate || 23}%</span>
                     <span className="text-xs font-medium">{formatPrice(item.price * item.quantity)}</span>
                   </div>
                 </div>
@@ -296,9 +296,14 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
               <span>{formatPrice(subtotal)}</span>
             </div>
 
-            <div className="flex justify-between text-lg font-serif text-brand-charcoal pt-4 border-t border-gray-200">
-              <span>Total</span>
-              <span className="text-brand-red font-bold">{formatPrice(total)}</span>
+            <div className="flex flex-col gap-1 pt-4 border-t border-gray-200">
+              <div className="flex justify-between text-lg font-serif text-brand-charcoal">
+                <span>Total</span>
+                <span className="text-brand-red font-bold">{formatPrice(total)}</span>
+              </div>
+              <div className="text-right text-[9px] uppercase tracking-widest text-gray-400 font-bold">
+                (Inclui IVA à taxa em vigor)
+              </div>
             </div>
           </div>
 
