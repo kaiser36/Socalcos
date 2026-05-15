@@ -4,19 +4,19 @@ import { supabase } from '../../lib/supabase';
 import Papa from 'papaparse';
 
 const TABLES = [
-  { 
-    id: 'products', 
-    name: 'Produtos', 
+  {
+    id: 'products',
+    name: 'Produtos',
     columns: [
-      'name', 'sku', 'description', 'price', 'weight', 'category_id', 'subcategory_ids', 
-      'producer', 'property', 'region', 'country', 'harvest', 'capacity', 
+      'id', 'name', 'sku', 'description', 'price', 'weight', 'category_id', 'subcategory_ids',
+      'producer', 'property', 'region', 'country', 'harvest', 'capacity',
       'alcohol_content', 'allergens', 'stock', 'tax_rate', 'image', 'published'
-    ] 
+    ]
   },
-  { 
-    id: 'categories', 
-    name: 'Categorias', 
-    columns: ['name', 'slug', 'parent_id'] 
+  {
+    id: 'categories',
+    name: 'Categorias',
+    columns: ['id', 'name', 'slug', 'parent_id']
   }
 ];
 
@@ -26,7 +26,7 @@ export default function DataManager() {
 
   const exportData = async (tableId: string) => {
     const { data, error } = await supabase.from(tableId).select('*');
-    
+
     if (error) {
       setStatus({ type: 'error', message: `Erro ao exportar dados: ${error.message}` });
       return;
@@ -81,35 +81,51 @@ export default function DataManager() {
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          // Clean data: replace empty strings with null for UUID columns or others
+          const tableDef = TABLES.find(t => t.id === tableId);
           const cleanedData = results.data.map((row: any) => {
-            const newRow = { ...row };
-            Object.keys(newRow).forEach(key => {
-              if (newRow[key] === '' || newRow[key] === undefined) {
-                newRow[key] = null;
-              } else if (key === 'subcategory_ids' && typeof newRow[key] === 'string') {
-                // Convert comma-separated string to Postgres array format {uuid,uuid}
-                const ids = newRow[key].split(',').map((s: string) => s.trim()).filter(Boolean);
-                newRow[key] = ids.length > 0 ? ids : null;
+            const cleanRow: any = {};
+
+            // Only copy columns defined in our official TABLE list
+            tableDef?.columns.forEach(col => {
+              // Find the matching key in the CSV row (case-insensitive)
+              const csvKey = Object.keys(row).find(k => k.toLowerCase().trim() === col.toLowerCase().trim());
+              if (!csvKey) return;
+
+              const value = row[csvKey];
+
+              // Handle subcategory_ids array
+              if (col === 'subcategory_ids' && typeof value === 'string' && value !== '') {
+                const ids = value.split(',').map((s: string) => s.trim()).filter(Boolean);
+                cleanRow[col] = ids.length > 0 ? ids : null;
+                return;
               }
+
+              // Skip ID if empty to allow auto-generation, but keep if present for UPSERT
+              if (col === 'id' && (!value || value === '' || value === 'null')) {
+                return;
+              }
+
+              // Handle empty values
+              cleanRow[col] = (value === '' || value === undefined || value === null || value === 'null') ? null : value;
             });
-            return newRow;
+
+            return cleanRow;
           });
 
           const { error } = await supabase
             .from(tableId)
-            .insert(cleanedData);
+            .upsert(cleanedData, { onConflict: 'id' });
 
           if (error) throw error;
 
-          setStatus({ 
-            type: 'success', 
-            message: `${cleanedData.length} registos importados com sucesso na tabela ${tableId}.` 
+          setStatus({
+            type: 'success',
+            message: `${cleanedData.length} registos importados com sucesso na tabela ${tableId}.`
           });
         } catch (err: any) {
-          setStatus({ 
-            type: 'error', 
-            message: `Erro na importação: ${err.message}` 
+          setStatus({
+            type: 'error',
+            message: `Erro na importação: ${err.message}`
           });
         } finally {
           setLoading(false);
@@ -134,7 +150,7 @@ export default function DataManager() {
                 <Database size={14} /> {table.name}
               </h3>
             </div>
-            
+
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-sm space-y-4">
                 <div>
@@ -160,7 +176,7 @@ export default function DataManager() {
               <div className="p-4 border-2 border-dashed border-gray-100 rounded-sm space-y-3 hover:border-brand-red/20 transition-all">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">2. Carregar Dados</p>
                 <p className="text-xs text-gray-500">Selecione o ficheiro CSV preenchido para importar.</p>
-                
+
                 <label className="relative inline-block group cursor-pointer">
                   <input
                     type="file"

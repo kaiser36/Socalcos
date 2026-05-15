@@ -17,8 +17,8 @@ import ProductDetail from './components/ProductDetail';
 import CartDrawer from './components/CartDrawer';
 import Checkout from './components/Checkout';
 import Success from './components/Success';
-import { products } from './data/products';
-import { CartItem, Product } from './types';
+import { supabase } from './lib/supabase';
+import { CartItem, Product, Category } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -34,10 +34,27 @@ export default function App() {
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'login' | 'admin' | 'profile'>('home');
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setDataLoading(true);
+    const { data: prodData } = await supabase.from('products').select('*');
+    const { data: catData } = await supabase.from('categories').select('*');
+    
+    if (prodData) setProducts(prodData);
+    if (catData) setCategories(catData);
+    setDataLoading(false);
+  };
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -94,8 +111,8 @@ function AppContent() {
         return (
           <>
             <Hero onNavigate={setCurrentPage} />
-            <Categories />
-            <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} />
+            <Categories categories={categories} />
+            <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
             <About onNavigate={setCurrentPage} />
             <Gallery />
           </>
@@ -130,7 +147,7 @@ function AppContent() {
       case 'login':
         return <LoginPage onNavigate={setCurrentPage} />;
       case 'admin':
-        if (loading) return <div className="min-h-screen flex items-center justify-center font-serif">A carregar...</div>;
+        if (authLoading) return <div className="min-h-screen flex items-center justify-center font-serif">A carregar...</div>;
         if (!user || !isAdmin) {
           setCurrentPage('login');
           return null;
