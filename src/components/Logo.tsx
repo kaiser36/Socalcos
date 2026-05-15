@@ -12,7 +12,7 @@ export default function Logo({ className = "", variant = "horizontal", light = f
       <img 
         src={logoSrc} 
         alt="Socalcos Logo" 
-        className={`${variant === 'horizontal' ? 'h-10 md:h-12 w-auto' : 'w-48 h-auto'} ${light ? 'brightness-0 invert' : ''} object-contain transition-all`}
+        className={`${variant === 'horizontal' ? 'h-10 md:h-12 w-auto' : 'h-32 md:h-40 w-auto'} ${light ? 'brightness-0 invert' : ''} object-contain transition-all`}
       />
     </div>
   );

@@ -62,30 +62,51 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
 
           <h1 className="text-5xl font-serif text-brand-charcoal mb-4 leading-tight">{product.name}</h1>
           
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i} 
-                  size={16} 
-                  className={i < product.rating ? "fill-brand-gold text-brand-gold" : "text-gray-200"} 
-                />
-              ))}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    size={16} 
+                    className={i < (product.rating || 5) ? "fill-brand-gold text-brand-gold" : "text-gray-200"} 
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-400 font-sans tracking-wide">Ref: {product.sku || `${product.id.substring(0, 5).toUpperCase()}-PT`}</span>
             </div>
-            <span className="text-xs text-gray-400 font-sans tracking-wide">Ref: {product.id}00-PT</span>
+            
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
+              <span className={`text-[10px] font-bold tracking-widest uppercase ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {product.stock > 0 ? 'Em Stock' : 'Esgotado'}
+              </span>
+            </div>
           </div>
 
           <p className="text-3xl font-light text-brand-charcoal mb-8">{formattedPrice}</p>
 
           <div className="space-y-6 mb-12">
-            <div className="grid grid-cols-2 gap-8 text-sm border-y border-gray-100 py-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-8 text-sm border-y border-gray-100 py-6">
               <div>
                 <span className="block text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-1">Região</span>
-                <span className="font-sans text-brand-charcoal">{product.region}</span>
+                <span className="font-sans text-brand-charcoal">{product.region || '-'}</span>
               </div>
               <div>
                 <span className="block text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-1">Colheita</span>
-                <span className="font-sans text-brand-charcoal">{product.vintage}</span>
+                <span className="font-sans text-brand-charcoal">{product.vintage || product.harvest || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-1">Produtor</span>
+                <span className="font-sans text-brand-charcoal">{product.producer || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-1">Capacidade</span>
+                <span className="font-sans text-brand-charcoal">{product.capacity || '75 cl'}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-1">Teor Alcoólico</span>
+                <span className="font-sans text-brand-charcoal">{product.alcohol_content ? `${product.alcohol_content}% vol.` : '-'}</span>
               </div>
             </div>
 
@@ -97,28 +118,30 @@ export default function ProductDetail({ product, onBack, onAddToCart }: ProductD
 
           {/* Add to Cart Controls */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex items-center border border-gray-200 h-14">
+            <div className={`flex items-center border border-gray-200 h-14 ${product.stock <= 0 ? 'opacity-50 pointer-events-none' : ''}`}>
               <button 
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="px-6 h-full hover:bg-gray-50 transition-colors"
-                disabled={quantity <= 1}
+                disabled={quantity <= 1 || product.stock <= 0}
               >
                 <Minus size={16} />
               </button>
               <span className="w-12 text-center font-sans font-medium">{quantity}</span>
               <button 
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
                 className="px-6 h-full hover:bg-gray-50 transition-colors"
+                disabled={quantity >= product.stock}
               >
                 <Plus size={16} />
               </button>
             </div>
             
             <button 
-              onClick={() => onAddToCart(product, quantity)}
-              className="flex-1 bg-brand-red text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase hover:bg-brand-red/90 transition-all rounded-sm"
+              onClick={() => product.stock > 0 && onAddToCart(product, quantity)}
+              disabled={product.stock <= 0}
+              className={`flex-1 text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm ${product.stock > 0 ? 'bg-brand-red hover:bg-brand-red/90' : 'bg-gray-300 cursor-not-allowed'}`}
             >
-              <ShoppingBag size={18} /> Adicionar ao Carrinho
+              <ShoppingBag size={18} /> {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
             </button>
           </div>
 
