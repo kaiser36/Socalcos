@@ -35,6 +35,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('Todas');
+  const [categories, setCategories] = useState<any[]>([]);
   const { signOut } = useAuth();
 
   useEffect(() => {
@@ -43,15 +46,27 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [productsRes, ordersRes] = await Promise.all([
+    const [productsRes, ordersRes, categoriesRes] = await Promise.all([
       supabase.from('products').select('*').order('created_at', { ascending: false }),
-      supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false })
+      supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }),
+      supabase.from('categories').select('*').order('name')
     ]);
 
     if (productsRes.data) setProducts(productsRes.data);
     if (ordersRes.data) setOrders(ordersRes.data);
+    if (categoriesRes.data) setCategories(categoriesRes.data);
     setLoading(false);
   };
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(adminSearchQuery.toLowerCase()) || 
+                          (p.sku && p.sku.toLowerCase().includes(adminSearchQuery.toLowerCase())) ||
+                          (p.producer && p.producer.toLowerCase().includes(adminSearchQuery.toLowerCase()));
+    
+    const matchesCategory = selectedCategoryFilter === 'Todas' || p.category_id === selectedCategoryFilter;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   const deleteProduct = async (id: string) => {
     if (!confirm('Tem a certeza que deseja eliminar este produto?')) return;
@@ -187,7 +202,35 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === 'products' && (
-          <div className="bg-white border border-gray-100 rounded-sm shadow-sm overflow-hidden">
+          <div className="space-y-6">
+            {/* Admin Filter Bar */}
+            <div className="flex flex-col md:flex-row gap-4 bg-white p-4 border border-gray-100 rounded-sm shadow-sm">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input 
+                  type="text"
+                  placeholder="Pesquisar por nome, SKU ou produtor..."
+                  value={adminSearchQuery}
+                  onChange={(e) => setAdminSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-sm border-none bg-gray-50 focus:ring-1 focus:ring-brand-red/20 rounded-sm outline-none font-sans"
+                />
+              </div>
+              <select 
+                value={selectedCategoryFilter}
+                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                className="bg-gray-50 border-none px-4 py-2 text-xs font-bold tracking-widest uppercase outline-none rounded-sm cursor-pointer"
+              >
+                <option value="Todas">Todas as Categorias</option>
+                {categories.filter(c => !c.parent_id).map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2 px-4 border-l border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                {filteredProducts.length} Produtos
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-100 rounded-sm shadow-sm overflow-hidden">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
@@ -198,8 +241,12 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                {filteredProducts.map((product) => (
+                  <tr 
+                    key={product.id} 
+                    onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}
+                    className="hover:bg-brand-red/[0.02] transition-colors cursor-pointer group"
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <img src={product.image} className="w-10 h-12 object-cover rounded-sm border border-gray-100" />
@@ -215,17 +262,17 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-brand-charcoal">{formatPrice(product.price)}</td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-2">
                         <button 
                           onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}
-                          className="p-2 text-gray-400 hover:text-brand-red transition-colors"
+                          className="p-2 text-gray-300 hover:text-brand-red transition-colors"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
                           onClick={() => deleteProduct(product.id)}
-                          className="p-2 text-gray-400 hover:text-brand-red transition-colors"
+                          className="p-2 text-gray-300 hover:text-brand-red transition-colors"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -236,6 +283,7 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+        </div>
         )}
 
         {activeTab === 'categories' && <CategoryManager />}

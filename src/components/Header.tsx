@@ -1,6 +1,7 @@
-import { Search, ShoppingCart, User, ShieldCheck } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Search, ShoppingCart, User, ShieldCheck, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
 
 import Logo from './Logo';
 
@@ -9,9 +10,22 @@ interface HeaderProps {
   currentPage: string;
   cartCount: number;
   onOpenCart: () => void;
+  searchQuery: string;
+  onSearch: (query: string) => void;
+  isSearchOpen: boolean;
+  setIsSearchOpen: (open: boolean) => void;
 }
 
-export default function Header({ onNavigate, currentPage, cartCount, onOpenCart }: HeaderProps) {
+export default function Header({ 
+  onNavigate, 
+  currentPage, 
+  cartCount, 
+  onOpenCart,
+  searchQuery,
+  onSearch,
+  isSearchOpen,
+  setIsSearchOpen
+}: HeaderProps) {
   const { user, isAdmin } = useAuth();
 
   const handleUserClick = () => {
@@ -52,23 +66,48 @@ export default function Header({ onNavigate, currentPage, cartCount, onOpenCart 
         </div>
 
         <div className="flex items-center gap-6">
-          <button className="hover:text-brand-red transition-colors">
-            <Search size={20} />
-          </button>
+          <div className="flex items-center">
+            <AnimatePresence>
+              {isSearchOpen && (
+                <motion.div
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 240, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Pesquisar..."
+                    value={searchQuery}
+                    onChange={(e) => onSearch(e.target.value)}
+                    className="w-full bg-gray-50 border-none py-2 px-4 text-sm font-sans outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <button 
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className={`transition-colors p-2 ${isSearchOpen ? 'text-brand-red' : 'hover:text-brand-red'}`}
+            >
+              {isSearchOpen ? <X size={20} /> : <Search size={20} />}
+            </button>
+          </div>
+
           <button 
             onClick={onOpenCart}
-            className="hover:text-brand-red transition-colors relative"
+            className="hover:text-brand-red transition-colors relative p-2"
           >
             <ShoppingCart size={20} />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-brand-red text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-in zoom-in duration-300">
+              <span className="absolute top-0 right-0 bg-brand-red text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
                 {cartCount}
               </span>
             )}
           </button>
           <button 
             onClick={handleUserClick}
-            className={`transition-colors relative ${currentPage === 'login' || currentPage === 'admin' || currentPage === 'profile' ? 'text-brand-red' : 'hover:text-brand-red text-brand-charcoal'}`}
+            className={`transition-colors relative p-2 ${currentPage === 'login' || currentPage === 'admin' || currentPage === 'profile' ? 'text-brand-red' : 'hover:text-brand-red text-brand-charcoal'}`}
           >
             {user ? (
               isAdmin ? <ShieldCheck size={20} /> : <User size={20} className="fill-brand-red/10" />

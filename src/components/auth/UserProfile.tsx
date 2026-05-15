@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { User, Mail, Shield, LogOut, Save, Loader2 } from 'lucide-react';
+import { User, Shield, LogOut, Save, Loader2 } from 'lucide-react';
 
-export default function ProfilePage() {
+export default function UserProfile() {
   const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);

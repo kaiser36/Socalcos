@@ -8,13 +8,26 @@ import ProductCard from './ProductCard';
 interface StoreProps {
   onSelectProduct: (id: string) => void;
   onAddToCart: (product: Product) => void;
+  externalSearch?: string;
+  onExternalSearchChange?: (query: string) => void;
 }
 
-export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
+export default function Store({ onSelectProduct, onAddToCart, externalSearch, onExternalSearchChange }: StoreProps) {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(externalSearch || '');
+
+  useEffect(() => {
+    if (externalSearch !== undefined && externalSearch !== searchQuery) {
+      setSearchQuery(externalSearch);
+    }
+  }, [externalSearch]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    onExternalSearchChange?.(val);
+  };
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('Todos');
   const [selectedRegion, setSelectedRegion] = useState<string>('Todas');
@@ -72,7 +85,7 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
     return {
       regions: Array.from(new Set(dbProducts.map(p => p.region).filter(Boolean))).sort(),
       producers: Array.from(new Set(dbProducts.map(p => p.producer).filter(Boolean))).sort(),
-      vintages: Array.from(new Set(dbProducts.map(p => p.harvest).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
+      vintages: Array.from(new Set(dbProducts.map(p => p.harvest).filter(Boolean))).sort((a, b) => (b as string).localeCompare(a as string)),
       capacities: Array.from(new Set(dbProducts.map(p => p.capacity).filter(Boolean))).sort()
     };
   }, [dbProducts]);
@@ -105,7 +118,7 @@ export default function Store({ onSelectProduct, onAddToCart }: StoreProps) {
             type="text"
             placeholder="Pesquisar vinho, região, produtor..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-sm shadow-sm focus:outline-none focus:border-brand-red/30 focus:ring-1 focus:ring-brand-red/5 transition-all text-sm font-sans"
           />
           {searchQuery && (

@@ -22,7 +22,7 @@ import { CartItem, Product, Category } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
-import ProfilePage from './components/auth/ProfilePage';
+import UserProfile from './components/auth/UserProfile';
 
 export default function App() {
   return (
@@ -41,6 +41,8 @@ function AppContent() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -100,6 +102,13 @@ function AppContent() {
     setCurrentPage('success');
   };
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (currentPage !== 'store' && query.trim() !== '') {
+      setCurrentPage('store');
+    }
+  };
+
   // Scroll to top when switching pages
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -120,7 +129,14 @@ function AppContent() {
       case 'about':
         return <AboutPage />;
       case 'store':
-        return <Store onSelectProduct={handleProductSelect} onAddToCart={addToCart} />;
+        return (
+          <Store 
+            onSelectProduct={handleProductSelect} 
+            onAddToCart={addToCart} 
+            externalSearch={searchQuery}
+            onExternalSearchChange={setSearchQuery}
+          />
+        );
       case 'detail':
         return selectedProduct ? (
           <ProductDetail 
@@ -158,7 +174,7 @@ function AppContent() {
           setCurrentPage('login');
           return null;
         }
-        return <ProfilePage />;
+        return <UserProfile />;
       default:
         return null;
     }
@@ -175,6 +191,10 @@ function AppContent() {
         currentPage={currentPage === 'detail' || currentPage === 'checkout' || currentPage === 'success' ? 'store' : currentPage} 
         cartCount={cartCount}
         onOpenCart={() => setIsCartOpen(true)}
+        searchQuery={searchQuery}
+        onSearch={handleSearch}
+        isSearchOpen={isSearchOpen}
+        setIsSearchOpen={setIsSearchOpen}
       />
       <main>
         {view()}
