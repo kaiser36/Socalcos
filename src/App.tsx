@@ -68,10 +68,28 @@ function AppContent() {
 
   const fetchData = async () => {
     setDataLoading(true);
+    // Fetch all products (standard limit applies)
     const { data: prodData } = await supabase.from('products').select('*');
+    // Fetch ALL favorites explicitly to bypass limits
+    const { data: favData } = await supabase.from('products').select('*').eq('is_favorite', true);
     const { data: catData } = await supabase.from('categories').select('*');
     
-    if (prodData) setProducts(prodData);
+    if (prodData) {
+      // Merge favorites into the products list to ensure we have them all
+      const mergedProducts = [...prodData];
+      if (favData) {
+        favData.forEach(fav => {
+          if (!mergedProducts.find(p => p.id === fav.id)) {
+            mergedProducts.push(fav);
+          } else {
+            // Update the favorite status in case the main fetch got an old version
+            const idx = mergedProducts.findIndex(p => p.id === fav.id);
+            mergedProducts[idx] = fav;
+          }
+        });
+      }
+      setProducts(mergedProducts);
+    }
     if (catData) setCategories(catData);
     setDataLoading(false);
   };
