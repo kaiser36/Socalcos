@@ -38,7 +38,11 @@ export default function AdminDashboard() {
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('Todas');
   const [categories, setCategories] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
   const { signOut } = useAuth();
+
+  const [stats, setStats] = useState({ products: 0, orders: 0, totalSales: 0 });
 
   useEffect(() => {
     fetchData();
@@ -46,27 +50,48 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     setLoading(true);
+    
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage - 1;
+
+    // Fetch counts and products with server-side filtering
+    let query = supabase.from('products').select('*', { count: 'exact' });
+    
+    if (selectedCategoryFilter !== 'Todas') {
+      query = query.eq('category_id', selectedCategoryFilter);
+    }
+    
+    if (adminSearchQuery) {
+      query = query.or(`name.ilike.%${adminSearchQuery}%,sku.ilike.%${adminSearchQuery}%,producer.ilike.%${adminSearchQuery}%`);
+    }
+
     const [productsRes, ordersRes, categoriesRes] = await Promise.all([
-      supabase.from('products').select('*').order('created_at', { ascending: false }),
+      query.order('created_at', { ascending: false }).range(start, end),
       supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('name')
     ]);
 
     if (productsRes.data) setProducts(productsRes.data);
-    if (ordersRes.data) setOrders(ordersRes.data);
+    if (ordersRes.data) {
+      setOrders(ordersRes.data);
+      const total = ordersRes.data.reduce((acc, curr) => acc + (curr.total || 0), 0);
+      setStats(prev => ({ ...prev, orders: ordersRes.data?.length || 0, totalSales: total }));
+    }
     if (categoriesRes.data) setCategories(categoriesRes.data);
+    if (productsRes.count !== null) setStats(prev => ({ ...prev, products: productsRes.count }));
+    
     setLoading(false);
   };
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(adminSearchQuery.toLowerCase()) || 
-                          (p.sku && p.sku.toLowerCase().includes(adminSearchQuery.toLowerCase())) ||
-                          (p.producer && p.producer.toLowerCase().includes(adminSearchQuery.toLowerCase()));
-    
-    const matchesCategory = selectedCategoryFilter === 'Todas' || p.category_id === selectedCategoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  });
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [adminSearchQuery, selectedCategoryFilter]);
+
+  useEffect(() => {
+    fetchData();
+  }, [currentPage, adminSearchQuery, selectedCategoryFilter]);
+
+  const filteredProducts = products; // Already filtered server-side
 
   const deleteProduct = async (id: string) => {
     if (!confirm('Tem a certeza que deseja eliminar este produto?')) return;
@@ -177,7 +202,7 @@ export default function AdminDashboard() {
                 <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Vendas Totais</h4>
               </div>
               <p className="text-3xl font-serif text-brand-charcoal">
-                {formatPrice(orders.reduce((acc, curr) => acc + curr.total, 0))}
+                {formatPrice(stats.totalSales)}
               </p>
             </div>
             <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
@@ -187,7 +212,7 @@ export default function AdminDashboard() {
                 </div>
                 <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Encomendas</h4>
               </div>
-              <p className="text-3xl font-serif text-brand-charcoal">{orders.length}</p>
+              <p className="text-3xl font-serif text-brand-charcoal">{stats.orders}</p>
             </div>
             <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
               <div className="flex items-center gap-4 mb-4">
@@ -196,7 +221,7 @@ export default function AdminDashboard() {
                 </div>
                 <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Produtos Ativos</h4>
               </div>
-              <p className="text-3xl font-serif text-brand-charcoal">{products.length}</p>
+              <p className="text-3xl font-serif text-brand-charcoal">{stats.products}</p>
             </div>
           </div>
         )}
@@ -282,6 +307,32 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+            
+            {/* Pagination Controls */}
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                A mostrar {products.length} de {stats.products} produtos
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-white border border-gray-100 rounded-sm hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  Anterior
+                </button>
+                <div className="px-4 py-2 text-[10px] font-bold text-brand-red bg-white border border-brand-red/10 rounded-sm">
+                  Página {currentPage}
+                </div>
+                <button
+                  disabled={currentPage * itemsPerPage >= stats.products}
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-white border border-gray-100 rounded-sm hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  Próxima
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         )}

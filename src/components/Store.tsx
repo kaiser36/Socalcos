@@ -36,50 +36,70 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
   const [selectedCapacity, setSelectedCapacity] = useState<string>('Todas');
   const [maxPrice, setMaxPrice] = useState<number>(1000);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const itemsPerPage = 24;
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (reset = false) => {
+    if (reset) {
+      setLoading(true);
+      setPage(0);
+    }
+    
+    const currentPage = reset ? 0 : page;
+    const start = currentPage * itemsPerPage;
+    const end = start + itemsPerPage - 1;
+
+    let query = supabase.from('products').select('*', { count: 'exact' }).eq('published', true);
+    
+    // Server-side Filtering
+    if (selectedCategory !== 'Todos') query = query.eq('category_id', selectedCategory);
+    if (selectedRegion !== 'Todas') query = query.eq('region', selectedRegion);
+    if (selectedProducer !== 'Todos') query = query.eq('producer', selectedProducer);
+    if (selectedVintage !== 'Todos') query = query.eq('harvest', selectedVintage);
+    if (selectedCapacity !== 'Todas') query = query.eq('capacity', selectedCapacity);
+    if (maxPrice < 1000) query = query.lte('price', maxPrice);
+    
+    if (searchQuery) {
+      query = query.or(`name.ilike.%${searchQuery}%,region.ilike.%${searchQuery}%,producer.ilike.%${searchQuery}%`);
+    }
+
     const [productsRes, categoriesRes] = await Promise.all([
-      supabase.from('products').select('*').eq('published', true),
+      query.order('created_at', { ascending: false }).range(start, end),
       supabase.from('categories').select('*').order('name')
     ]);
 
     if (productsRes.data) {
-      setDbProducts(productsRes.data);
-      const highestPrice = Math.max(...productsRes.data.map(p => p.price), 1000);
-      setMaxPrice(highestPrice);
+      if (reset) setDbProducts(productsRes.data);
+      else setDbProducts(prev => [...prev, ...productsRes.data!]);
+      
+      setHasMore(productsRes.data.length === itemsPerPage);
     }
+    
     if (categoriesRes.data) setCategories(categoriesRes.data);
     setLoading(false);
   };
 
+  useEffect(() => {
+    fetchData(true);
+  }, [searchQuery, selectedCategory, selectedRegion, selectedProducer, selectedVintage, selectedCapacity, maxPrice]);
+
+  const loadMore = () => {
+    setPage(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    if (page > 0) fetchData();
+  }, [page]);
+
   const normalize = (str: string) => 
     str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
-  const filteredProducts = useMemo(() => {
-    return dbProducts.filter(product => {
-      const q = normalize(searchQuery);
-      const matchesSearch = !q || 
-                            normalize(product.name).includes(q) || 
-                            normalize(product.region).includes(q) ||
-                            normalize(product.producer).includes(q);
-      
-      const matchesCategory = selectedCategory === 'Todos' || product.category_id === selectedCategory;
-      const matchesSubcategory = selectedSubcategory === 'Todos' || (product.subcategory_ids && product.subcategory_ids.includes(selectedSubcategory));
-      const matchesRegion = selectedRegion === 'Todas' || product.region === selectedRegion;
-      const matchesProducer = selectedProducer === 'Todos' || product.producer === selectedProducer;
-      const matchesVintage = selectedVintage === 'Todos' || product.harvest === selectedVintage;
-      const matchesCapacity = selectedCapacity === 'Todas' || product.capacity === selectedCapacity;
-      const matchesPrice = product.price <= maxPrice;
-      
-      return matchesSearch && matchesCategory && matchesSubcategory && matchesRegion && 
-             matchesProducer && matchesVintage && matchesCapacity && matchesPrice;
-    });
-  }, [dbProducts, searchQuery, selectedCategory, selectedSubcategory, selectedRegion, selectedProducer, selectedVintage, selectedCapacity, maxPrice]);
+  const filteredProducts = dbProducts; // Already filtered server-side
 
   const uniqueValues = useMemo(() => {
     return {
@@ -341,18 +361,32 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
         {/* Main Product Grid */}
         <div className="flex-1">
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-              {filteredProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: (index % 3) * 0.1 }}
-                  className="h-full"
-                >
-                  <ProductCard {...product} onSelect={onSelectProduct} onAddToCart={onAddToCart} />
-                </motion.div>
-              ))}
+            <div className="space-y-16">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+                {filteredProducts.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: (index % 3) * 0.05 }}
+                    className="h-full"
+                  >
+                    <ProductCard {...product} onSelect={onSelectProduct} onAddToCart={onAddToCart} />
+                  </motion.div>
+                ))}
+              </div>
+              
+              {hasMore && (
+                <div className="flex justify-center pt-8">
+                  <button 
+                    onClick={loadMore}
+                    disabled={loading}
+                    className="px-12 py-4 border border-brand-red text-brand-red text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-brand-red hover:text-white transition-all rounded-sm disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 className="animate-spin mx-auto" size={16} /> : 'Carregar mais produtos'}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="py-24 text-center">
