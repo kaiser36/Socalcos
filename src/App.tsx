@@ -11,6 +11,7 @@ import Favorites from './components/Favorites';
 import About from './components/About';
 import AboutPage from './components/AboutPage';
 import Gallery from './components/Gallery';
+import GalleryPage from './components/GalleryPage';
 import Footer from './components/Footer';
 import Store from './components/Store';
 import ProductDetail from './components/ProductDetail';
@@ -18,7 +19,7 @@ import CartDrawer from './components/CartDrawer';
 import Checkout from './components/Checkout';
 import Success from './components/Success';
 import { supabase } from './lib/supabase';
-import { CartItem, Product, Category } from './types';
+import { CartItem, Product, Category, GalleryImage } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -33,7 +34,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'login' | 'admin' | 'profile'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'gallery' | 'login' | 'admin' | 'profile'>('home');
 
   const handleNavigate = (page: any) => {
     if (page === 'home') {
@@ -45,6 +46,7 @@ function AppContent() {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -73,6 +75,7 @@ function AppContent() {
     // Fetch ALL favorites explicitly to bypass limits
     const { data: favData } = await supabase.from('products').select('*').eq('is_favorite', true);
     const { data: catData } = await supabase.from('categories').select('*');
+    const { data: galleryData } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
     
     if (prodData) {
       // Merge favorites into the products list to ensure we have them all
@@ -91,6 +94,7 @@ function AppContent() {
       setProducts(mergedProducts);
     }
     if (catData) setCategories(catData);
+    if (galleryData) setGalleryImages(galleryData);
     setDataLoading(false);
   };
 
@@ -159,11 +163,13 @@ function AppContent() {
             <Categories categories={categories} />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
             <About onNavigate={handleNavigate} />
-            <Gallery />
+            <Gallery images={galleryImages} onNavigate={handleNavigate} />
           </>
         );
       case 'about':
         return <AboutPage />;
+      case 'gallery':
+        return <GalleryPage />;
       case 'store':
         return (
           <Store 

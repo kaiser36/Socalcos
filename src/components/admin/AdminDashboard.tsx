@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { 
@@ -11,28 +11,28 @@ import {
   Search, 
   Edit2, 
   Trash2,
-  Clock,
-  CheckCircle2,
-  XCircle,
   TrendingUp,
   LayoutDashboard,
   Layers,
   ShoppingCart,
   Database,
-  Download,
-  UploadCloud
+  UploadCloud,
+  Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Product } from '../../types';
+import { Product, GalleryImage } from '../../types';
 import ProductModal from './ProductModal';
 import CategoryManager from './CategoryManager';
 import DataManager from './DataManager';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'orders' | 'overview' | 'data' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'gallery' | 'orders' | 'data' | 'settings'>('overview');
   const [products, setProducts] = useState<Product[]>([]);
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
@@ -42,13 +42,15 @@ export default function AdminDashboard() {
   const itemsPerPage = 50;
   const [heroImageUrl, setHeroImageUrl] = useState('');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
   const { signOut } = useAuth();
 
   const [stats, setStats] = useState({ products: 0, orders: 0, totalSales: 0 });
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPage, adminSearchQuery, selectedCategoryFilter, showOnlyFavorites]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -56,7 +58,6 @@ export default function AdminDashboard() {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage - 1;
 
-    // Fetch counts and products with server-side filtering
     let query = supabase.from('products').select('*', { count: 'exact' });
     
     if (selectedCategoryFilter !== 'Todas') {
@@ -71,10 +72,12 @@ export default function AdminDashboard() {
       query = query.eq('is_favorite', true);
     }
 
-    const [productsRes, ordersRes, categoriesRes] = await Promise.all([
+    const [productsRes, ordersRes, categoriesRes, galleryRes, settingsRes] = await Promise.all([
       query.order('created_at', { ascending: false }).range(start, end),
       supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }),
-      supabase.from('categories').select('*').order('name')
+      supabase.from('categories').select('*').order('name'),
+      supabase.from('gallery').select('*').order('created_at', { ascending: false }),
+      supabase.from('site_settings').select('*')
     ]);
 
     if (productsRes.data) setProducts(productsRes.data);
@@ -84,16 +87,106 @@ export default function AdminDashboard() {
       setStats(prev => ({ ...prev, orders: ordersRes.data?.length || 0, totalSales: total }));
     }
     if (categoriesRes.data) setCategories(categoriesRes.data);
+    if (galleryRes.data) setGallery(galleryRes.data);
     if (productsRes.count !== null) setStats(prev => ({ ...prev, products: productsRes.count }));
     
-    // Fetch settings
-    const { data: settingsData } = await supabase.from('site_settings').select('*');
-    if (settingsData) {
-      const hero = settingsData.find(s => s.key === 'hero_image')?.value;
+    if (settingsRes.data) {
+      const hero = settingsRes.data.find(s => s.key === 'hero_image')?.value;
       if (hero) setHeroImageUrl(hero);
     }
 
     setLoading(false);
+  };
+
+  const handleGalleryUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${fileName}`; // Directly in bucket root
+
+      const { error: uploadError } = await supabase.storage
+        .from('gallery')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('gallery')
+        .getPublicUrl(filePath);
+
+      const { error: dbError } = await supabase
+        .from('gallery')
+        .insert([{ url: publicUrl }]);
+
+      if (dbError) throw dbError;
+
+      fetchData();
+    } catch (error: any) {
+      alert('Erro no upload: ' + error.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const deleteGalleryImage = async (id: string, url: string) => {
+    if (!confirm('Tem a certeza que deseja eliminar esta imagem?')) return;
+
+    try {
+      const fileName = url.split('/').pop();
+      if (fileName) {
+        await supabase.storage.from('gallery').remove([fileName]);
+      }
+      
+      const { error } = await supabase
+        .from('gallery')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchData();
+    } catch (error: any) {
+      alert('Erro ao eliminar: ' + error.message);
+    }
+  };
+
+  const handleHeroUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `hero-banner-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('site-assets')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('site-assets')
+        .getPublicUrl(fileName);
+
+      const { error: dbError } = await supabase
+        .from('site_settings')
+        .upsert({ key: 'hero_image', value: publicUrl }, { onConflict: 'key' });
+
+      if (dbError) throw dbError;
+
+      setHeroImageUrl(publicUrl);
+      alert('Banner atualizado com sucesso!');
+    } catch (error: any) {
+      alert('Erro no upload do banner: ' + error.message);
+    } finally {
+      setLoading(false);
+      if (heroInputRef.current) heroInputRef.current.value = '';
+    }
   };
 
   const saveSettings = async () => {
@@ -104,25 +197,13 @@ export default function AdminDashboard() {
     
     if (!error) {
       alert('Definições guardadas com sucesso!');
-      window.location.reload();
     } else {
       alert('Erro ao guardar: ' + error.message);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [adminSearchQuery, selectedCategoryFilter, showOnlyFavorites]);
-
-  useEffect(() => {
-    fetchData();
-  }, [currentPage, adminSearchQuery, selectedCategoryFilter, showOnlyFavorites]);
-
-  const filteredProducts = products; // Already filtered server-side
-
   const toggleFavorite = async (product: Product) => {
-    // Optimistic update
     setProducts(prev => prev.map(p => 
       p.id === product.id ? { ...p, is_favorite: !p.is_favorite } : p
     ));
@@ -133,10 +214,7 @@ export default function AdminDashboard() {
       .eq('id', product.id);
     
     if (error) {
-      // Revert if error
-      setProducts(prev => prev.map(p => 
-        p.id === product.id ? { ...p, is_favorite: product.is_favorite } : p
-      ));
+      fetchData();
       alert('Erro ao atualizar favorito: ' + error.message);
     }
   };
@@ -163,54 +241,30 @@ export default function AdminDashboard() {
           <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Backoffice Admin</p>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2">
-          <button 
-            onClick={() => setActiveTab('overview')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-sm transition-all ${activeTab === 'overview' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-          >
-            <LayoutDashboard size={18} /> Resumo
-          </button>
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+          {[
+            { id: 'overview', label: 'Resumo', icon: LayoutDashboard },
+            { id: 'products', label: 'Produtos', icon: Package },
+            { id: 'categories', label: 'Categorias', icon: Layers },
+            { id: 'gallery', label: 'Galeria', icon: ImageIcon },
+            { id: 'orders', label: 'Encomendas', icon: ShoppingCart },
+            { id: 'data', label: 'Dados', icon: Database },
+            { id: 'settings', label: 'Definições', icon: Settings },
+          ].map((item) => (
             <button 
-              onClick={() => setActiveTab('products')}
-              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'products' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
+              key={item.id}
+              onClick={() => setActiveTab(item.id as any)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === item.id ? 'bg-brand-red text-white shadow-lg shadow-brand-red/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
             >
-              <Package size={20} />
-              <span className="text-xs font-bold tracking-widest uppercase">Produtos</span>
+              <item.icon size={18} /> {item.label}
             </button>
-            <button 
-              onClick={() => setActiveTab('categories')}
-              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'categories' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
-            >
-              <Layers size={20} />
-              <span className="text-xs font-bold tracking-widest uppercase">Categorias</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('orders')}
-              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'orders' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
-            >
-              <ShoppingCart size={20} />
-              <span className="text-xs font-bold tracking-widest uppercase">Encomendas</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('data')}
-              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'data' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
-            >
-              <Database size={20} />
-              <span className="text-xs font-bold tracking-widest uppercase">Importar/Exportar</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center gap-4 px-6 py-4 transition-all ${activeTab === 'settings' ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-charcoal hover:bg-gray-50'}`}
-            >
-              <Settings size={20} />
-              <span className="text-xs font-bold tracking-widest uppercase">Definições</span>
-            </button>
+          ))}
         </nav>
 
         <div className="p-4 mt-auto border-t border-white/5">
           <button 
             onClick={signOut}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-sm text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-sm text-[10px] font-bold tracking-widest uppercase text-gray-400 hover:text-white hover:bg-white/5 transition-all"
           >
             <LogOut size={18} /> Sair
           </button>
@@ -221,29 +275,40 @@ export default function AdminDashboard() {
       <main className="ml-64 flex-1 p-12">
         <header className="flex justify-between items-center mb-12">
           <div>
-            <h1 className="text-3xl font-serif text-brand-charcoal">
+            <h1 className="text-3xl font-serif text-brand-charcoal capitalize">
               {activeTab === 'overview' ? 'Painel de Controlo' : 
-               activeTab === 'products' ? 'Gestão de Produtos' : 
-               activeTab === 'categories' ? 'Estrutura de Categorias' :
-               activeTab === 'data' ? 'Importar & Exportar Dados' :
-               'Gestão de Encomendas'}
+               activeTab === 'gallery' ? 'Galeria de Imagens' :
+               activeTab}
             </h1>
-            <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">
-              {activeTab === 'overview' ? 'Resumo da atividade da loja' : 
-               activeTab === 'products' ? 'Administrar catálogo e stock' : 
-               activeTab === 'categories' ? 'Organizar hierarquia de produtos' :
-               activeTab === 'data' ? 'Gestão em massa via ficheiros CSV' :
-               'Monitorizar vendas e envios'}
-            </p>
           </div>
           
           {activeTab === 'products' && (
             <button 
               onClick={() => { setSelectedProduct(null); setIsModalOpen(true); }}
-              className="bg-brand-red text-white px-6 py-3 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all flex items-center gap-2 shadow-lg shadow-brand-red/10"
+              className="bg-brand-red text-white px-6 py-3 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all flex items-center gap-2"
             >
               <Plus size={16} /> Novo Produto
             </button>
+          )}
+
+          {activeTab === 'gallery' && (
+            <div className="relative">
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleGalleryUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="bg-brand-red text-white px-6 py-3 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {isUploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />}
+                {isUploading ? 'A Carregar...' : 'Carregar Foto'}
+              </button>
+            </div>
           )}
         </header>
 
@@ -256,9 +321,7 @@ export default function AdminDashboard() {
                 </div>
                 <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Vendas Totais</h4>
               </div>
-              <p className="text-3xl font-serif text-brand-charcoal">
-                {formatPrice(stats.totalSales)}
-              </p>
+              <p className="text-3xl font-serif text-brand-charcoal">{formatPrice(stats.totalSales)}</p>
             </div>
             <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
               <div className="flex items-center gap-4 mb-4">
@@ -283,13 +346,12 @@ export default function AdminDashboard() {
 
         {activeTab === 'products' && (
           <div className="space-y-6">
-            {/* Admin Filter Bar */}
             <div className="flex flex-col md:flex-row gap-4 bg-white p-4 border border-gray-100 rounded-sm shadow-sm">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input 
                   type="text"
-                  placeholder="Pesquisar por nome, SKU ou produtor..."
+                  placeholder="Pesquisar..."
                   value={adminSearchQuery}
                   onChange={(e) => setAdminSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 text-sm border-none bg-gray-50 focus:ring-1 focus:ring-brand-red/20 rounded-sm outline-none font-sans"
@@ -305,171 +367,113 @@ export default function AdminDashboard() {
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
-              
               <button 
                 onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-sm border transition-all text-[10px] font-bold tracking-widest uppercase ${showOnlyFavorites ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white text-gray-400 border-gray-100 hover:border-brand-gold hover:text-brand-gold'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-sm border transition-all text-[10px] font-bold tracking-widest uppercase ${showOnlyFavorites ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white text-gray-400 border-gray-100'}`}
               >
-                <Plus size={14} className={showOnlyFavorites ? 'fill-current' : ''} />
-                {showOnlyFavorites ? 'Ver Todos' : 'Ver Favoritos'}
+                <Plus size={14} /> {showOnlyFavorites ? 'Ver Todos' : 'Ver Favoritos'}
               </button>
-              <div className="flex items-center gap-2 px-4 border-l border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                {filteredProducts.length} Produtos
-              </div>
             </div>
 
             <div className="bg-white border border-gray-100 rounded-sm shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 w-10 text-center">Fav</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Produto / SKU</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Estado</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Preço</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filteredProducts.map((product) => (
-                  <tr 
-                    key={product.id} 
-                    className="hover:bg-brand-red/[0.02] transition-colors cursor-pointer group"
-                  >
-                    <td className="px-6 py-4 text-center" onClick={(e) => { e.stopPropagation(); toggleFavorite(product); }}>
-                      <button className={`transition-all ${product.is_favorite ? 'text-brand-gold scale-125' : 'text-gray-200 hover:text-brand-gold'}`}>
-                        <Plus size={18} className={product.is_favorite ? 'fill-current' : ''} />
-                      </button>
-                    </td>
-                    <td className="px-6 py-4" onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}>
-                      <div className="flex items-center gap-4">
-                        <img src={product.image} className="w-10 h-12 object-cover rounded-sm border border-gray-100" />
-                        <div>
-                          <p className="text-sm font-serif font-medium text-brand-charcoal">{product.name}</p>
-                          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono">{product.sku || 'Sem SKU'}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${product.published ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                        {product.published ? 'Publicado' : 'Draft'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-brand-charcoal">{formatPrice(product.price)}</td>
-                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}
-                          className="p-2 text-gray-300 hover:text-brand-red transition-colors"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => deleteProduct(product.id)}
-                          className="p-2 text-gray-300 hover:text-brand-red transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 w-10 text-center">Fav</th>
+                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Produto</th>
+                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Estado</th>
+                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Preço</th>
+                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 text-right">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            {/* Pagination Controls */}
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                A mostrar {products.length} de {stats.products} produtos
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-white border border-gray-100 rounded-sm hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  Anterior
-                </button>
-                <div className="px-4 py-2 text-[10px] font-bold text-brand-red bg-white border border-brand-red/10 rounded-sm">
-                  Página {currentPage}
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {products.map((product) => (
+                    <tr key={product.id} className="hover:bg-brand-red/[0.02] transition-colors group">
+                      <td className="px-6 py-4 text-center">
+                        <button onClick={() => toggleFavorite(product)} className={`transition-all ${product.is_favorite ? 'text-brand-gold scale-125' : 'text-gray-200 hover:text-brand-gold'}`}>
+                          <Plus size={18} className={product.is_favorite ? 'fill-current' : ''} />
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <img src={product.image} className="w-10 h-12 object-cover rounded-sm border border-gray-100" />
+                          <div>
+                            <p className="text-sm font-serif font-medium text-brand-charcoal">{product.name}</p>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono">{product.sku}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${product.published ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                          {product.published ? 'Publicado' : 'Draft'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-brand-charcoal">{formatPrice(product.price)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }} className="p-2 text-gray-300 hover:text-brand-red transition-colors"><Edit2 size={16} /></button>
+                          <button onClick={() => deleteProduct(product.id)} className="p-2 text-gray-300 hover:text-brand-red transition-colors"><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">A mostrar {products.length} de {stats.products}</div>
+                <div className="flex gap-2">
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 text-[10px] font-bold uppercase bg-white border border-gray-100 rounded-sm disabled:opacity-30">Anterior</button>
+                  <button onClick={() => setCurrentPage(p => p + 1)} disabled={products.length < itemsPerPage} className="px-4 py-2 text-[10px] font-bold uppercase bg-white border border-gray-100 rounded-sm disabled:opacity-30">Próxima</button>
                 </div>
-                <button
-                  disabled={currentPage * itemsPerPage >= stats.products}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-white border border-gray-100 rounded-sm hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  Próxima
-                </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'gallery' && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {gallery.map((img) => (
+              <div key={img.id} className="relative aspect-square bg-white border border-gray-100 rounded-sm shadow-sm group overflow-hidden">
+                <img src={img.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                  <button 
+                    onClick={() => deleteGalleryImage(img.id, img.url)}
+                    className="p-3 bg-white text-brand-red rounded-full hover:scale-110 transition-transform shadow-xl"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+              </div>
+            ))}
+            {gallery.length === 0 && (
+              <div className="col-span-full py-24 text-center bg-white border border-dashed border-gray-200 rounded-sm">
+                <ImageIcon className="mx-auto text-gray-300 mb-4" size={48} />
+                <p className="text-sm text-gray-400 font-sans">Nenhuma imagem na galeria. Carregue a sua primeira foto!</p>
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === 'categories' && <CategoryManager />}
-
         {activeTab === 'data' && <DataManager />}
-
-        {activeTab === 'settings' && (
-          <div className="bg-white p-12 border border-gray-100 rounded-sm shadow-sm max-w-4xl">
-            <h2 className="text-xl font-serif text-brand-charcoal mb-8">Definições do Site</h2>
-            <div className="space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">URL da Imagem do Banner (Hero)</label>
-                <input 
-                  type="text"
-                  placeholder="https://images.unsplash.com/..."
-                  value={heroImageUrl}
-                  onChange={(e) => setHeroImageUrl(e.target.value)}
-                  className="w-full bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
-                />
-                <p className="text-[9px] text-gray-400 uppercase tracking-widest mt-1">Dica: Podes usar um link de uma imagem online ou do teu próprio servidor.</p>
-              </div>
-              <button 
-                onClick={saveSettings}
-                disabled={loading}
-                className="bg-brand-red text-white px-8 py-4 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all shadow-lg disabled:opacity-50"
-              >
-                {loading ? 'A guardar...' : 'Guardar Alterações'}
-              </button>
-            </div>
-          </div>
-        )}
-
         {activeTab === 'orders' && (
           <div className="bg-white border border-gray-100 rounded-sm shadow-sm overflow-hidden">
-            <table className="w-full text-left">
+             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
                   <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Encomenda</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Cliente</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Total</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Estado</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={order.id} className="hover:bg-gray-50/50 transition-colors text-sm">
+                    <td className="px-6 py-4 font-mono text-brand-red">#{order.id.slice(0, 8)}</td>
+                    <td className="px-6 py-4">{order.customer_name}</td>
+                    <td className="px-6 py-4">{formatPrice(order.total)}</td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-mono text-brand-red">#{order.id.slice(0, 8)}</p>
-                      <p className="text-[10px] text-gray-400 mt-1">{new Date(order.created_at).toLocaleDateString()}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-brand-charcoal">{order.customer_name}</p>
-                      <p className="text-[10px] text-gray-400 font-sans">{order.customer_email}</p>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-brand-charcoal">{formatPrice(order.total)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                        order.status === 'pending' ? 'bg-brand-gold/10 text-brand-gold' :
-                        order.status === 'confirmed' ? 'bg-blue-50 text-blue-500' :
-                        order.status === 'shipped' ? 'bg-green-50 text-green-500' :
-                        'bg-gray-50 text-gray-400'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
                       <select 
                         value={order.status}
                         onChange={(e) => updateOrderStatus(order.id, e.target.value)}
@@ -485,6 +489,64 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="bg-white p-12 border border-gray-100 rounded-sm shadow-sm max-w-4xl">
+            <h2 className="text-xl font-serif text-brand-charcoal mb-8">Definições do Site</h2>
+            <div className="space-y-12">
+              <div className="space-y-6">
+                <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Imagem do Banner Principal (Hero)</label>
+                
+                {heroImageUrl && (
+                  <div className="relative aspect-[21/9] w-full overflow-hidden rounded-sm border border-gray-100 mb-4 bg-gray-50">
+                    <img src={heroImageUrl} alt="Hero Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <p className="text-white text-[10px] font-bold uppercase tracking-widest">Antevisão Atual</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="file" 
+                    ref={heroInputRef}
+                    onChange={handleHeroUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button 
+                    onClick={() => heroInputRef.current?.click()}
+                    disabled={loading}
+                    className="flex-1 bg-brand-charcoal text-white px-8 py-4 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />}
+                    {loading ? 'A Carregar...' : 'Alterar Imagem do Banner'}
+                  </button>
+                </div>
+                
+                <div className="pt-6 border-t border-gray-50">
+                   <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-2">Ou introduza um URL direto:</p>
+                   <div className="flex gap-4">
+                    <input 
+                      type="text"
+                      placeholder="https://..."
+                      value={heroImageUrl}
+                      onChange={(e) => setHeroImageUrl(e.target.value)}
+                      className="flex-1 bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm font-sans text-sm"
+                    />
+                    <button 
+                      onClick={saveSettings}
+                      disabled={loading}
+                      className="bg-brand-red text-white px-8 py-4 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all disabled:opacity-50"
+                    >
+                      Guardar URL
+                    </button>
+                   </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>

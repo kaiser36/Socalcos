@@ -5,6 +5,17 @@ export interface Category {
   slug: string;
 }
 
+export interface GalleryImage {
+  id: string;
+  url: string;
+  created_at: string;
+}
+
+export interface SiteSettings {
+  key: string;
+  value: string;
+}
+
 export interface Product {
   id: string;
   sku: string;

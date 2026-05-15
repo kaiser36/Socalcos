@@ -1,13 +1,15 @@
 import { motion } from 'motion/react';
+import { GalleryImage } from '../types';
 
-const galleryImages = [
-  "/images/galeria-1.jpg",
-  "/images/galeria-2.jpg",
-  "/images/galeria-3.jpg",
-  "/images/galeria-4.jpg"
-];
+interface GalleryProps {
+  images: GalleryImage[];
+  onNavigate: (page: 'gallery') => void;
+}
 
-export default function Gallery() {
+export default function Gallery({ images, onNavigate }: GalleryProps) {
+  // Show first 4 images or empty array
+  const displayImages = images.slice(0, 4);
+
   return (
     <section className="py-24 bg-[#efefed]/30 px-6">
       <div className="max-w-7xl mx-auto">
@@ -32,9 +34,9 @@ export default function Gallery() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-          {galleryImages.map((src, index) => (
+          {displayImages.map((img, index) => (
             <motion.div 
-              key={index}
+              key={img.id}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
@@ -42,18 +44,24 @@ export default function Gallery() {
               className="aspect-square overflow-hidden rounded-sm"
             >
               <img 
-                src={src} 
-                alt={`Gallery ${index}`} 
+                src={img.url} 
+                alt={`Loja Socalcos ${index + 1}`} 
                 className="w-full h-full object-cover hover:scale-110 transition-transform duration-700" 
               />
             </motion.div>
           ))}
+          {displayImages.length === 0 && (
+             <div className="col-span-full py-12 text-center text-gray-400 font-sans italic">
+               A carregar imagens da loja...
+             </div>
+          )}
         </div>
 
         <div className="text-center">
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate('gallery')}
             className="bg-brand-charcoal text-white px-10 py-4 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red transition-all"
           >
             Ver galeria completa
