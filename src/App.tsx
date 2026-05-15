@@ -12,6 +12,7 @@ import About from './components/About';
 import AboutPage from './components/AboutPage';
 import Gallery from './components/Gallery';
 import GalleryPage from './components/GalleryPage';
+import Testimonials from './components/Testimonials';
 import Footer from './components/Footer';
 import Store from './components/Store';
 import ProductDetail from './components/ProductDetail';
@@ -19,7 +20,7 @@ import CartDrawer from './components/CartDrawer';
 import Checkout from './components/Checkout';
 import Success from './components/Success';
 import { supabase } from './lib/supabase';
-import { CartItem, Product, Category, GalleryImage } from './types';
+import { CartItem, Product, Category, GalleryImage, Testimonial } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -47,6 +48,7 @@ function AppContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -76,6 +78,7 @@ function AppContent() {
     const { data: favData } = await supabase.from('products').select('*').eq('is_favorite', true);
     const { data: catData } = await supabase.from('categories').select('*');
     const { data: galleryData } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+    const { data: testData } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
     
     if (prodData) {
       // Merge favorites into the products list to ensure we have them all
@@ -95,6 +98,7 @@ function AppContent() {
     }
     if (catData) setCategories(catData);
     if (galleryData) setGalleryImages(galleryData);
+    if (testData) setTestimonials(testData);
     setDataLoading(false);
   };
 
@@ -163,6 +167,7 @@ function AppContent() {
             <Categories categories={categories} />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
             <About onNavigate={handleNavigate} />
+            <Testimonials testimonials={testimonials} />
             <Gallery images={galleryImages} onNavigate={handleNavigate} />
           </>
         );

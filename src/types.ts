@@ -11,6 +11,15 @@ export interface GalleryImage {
   created_at: string;
 }
 
+export interface Testimonial {
+  id: string;
+  name: string;
+  content: string;
+  rating: number;
+  avatar_url: string;
+  created_at: string;
+}
+
 export interface SiteSettings {
   key: string;
   value: string;

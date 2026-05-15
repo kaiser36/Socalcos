@@ -25,11 +25,13 @@ import { Product, GalleryImage } from '../../types';
 import ProductModal from './ProductModal';
 import CategoryManager from './CategoryManager';
 import DataManager from './DataManager';
+import { Star, MessageSquareQuote } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'gallery' | 'orders' | 'data' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'gallery' | 'orders' | 'data' | 'settings' | 'testimonials'>('overview');
   const [products, setProducts] = useState<Product[]>([]);
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -44,6 +46,8 @@ export default function AdminDashboard() {
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const heroInputRef = useRef<HTMLInputElement>(null);
+  const testimonialInputRef = useRef<HTMLInputElement>(null);
+  const [newTestimonial, setNewTestimonial] = useState({ name: '', content: '', rating: 5, avatar_url: '' });
   const { signOut } = useAuth();
 
   const [stats, setStats] = useState({ products: 0, orders: 0, totalSales: 0 });
@@ -72,12 +76,13 @@ export default function AdminDashboard() {
       query = query.eq('is_favorite', true);
     }
 
-    const [productsRes, ordersRes, categoriesRes, galleryRes, settingsRes] = await Promise.all([
+    const [productsRes, ordersRes, categoriesRes, galleryRes, settingsRes, testimonialsRes] = await Promise.all([
       query.order('created_at', { ascending: false }).range(start, end),
       supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }),
       supabase.from('categories').select('*').order('name'),
       supabase.from('gallery').select('*').order('created_at', { ascending: false }),
-      supabase.from('site_settings').select('*')
+      supabase.from('site_settings').select('*'),
+      supabase.from('testimonials').select('*').order('created_at', { ascending: false })
     ]);
 
     if (productsRes.data) setProducts(productsRes.data);
@@ -88,6 +93,7 @@ export default function AdminDashboard() {
     }
     if (categoriesRes.data) setCategories(categoriesRes.data);
     if (galleryRes.data) setGallery(galleryRes.data);
+    if (testimonialsRes.data) setTestimonials(testimonialsRes.data);
     if (productsRes.count !== null) setStats(prev => ({ ...prev, products: productsRes.count }));
     
     if (settingsRes.data) {
@@ -189,6 +195,68 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleTestimonialUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `testimonial-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('testimonials')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('testimonials')
+        .getPublicUrl(fileName);
+
+      setNewTestimonial(prev => ({ ...prev, avatar_url: publicUrl }));
+    } catch (error: any) {
+      alert('Erro no upload da foto: ' + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const saveTestimonial = async () => {
+    if (!newTestimonial.name || !newTestimonial.content) {
+      alert('Preencha o nome e o comentário!');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('testimonials').insert([newTestimonial]);
+      if (error) throw error;
+      setNewTestimonial({ name: '', content: '', rating: 5, avatar_url: '' });
+      fetchData();
+    } catch (error: any) {
+      alert('Erro ao guardar testemunho: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTestimonial = async (id: string, avatar_url: string) => {
+    if (!confirm('Tem a certeza que deseja eliminar este testemunho?')) return;
+
+    try {
+      if (avatar_url) {
+        const fileName = avatar_url.split('/').pop();
+        if (fileName) await supabase.storage.from('testimonials').remove([fileName]);
+      }
+      const { error } = await supabase.from('testimonials').delete().eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (error: any) {
+      alert('Erro ao eliminar: ' + error.message);
+    }
+  };
+
   const saveSettings = async () => {
     setLoading(true);
     const { error } = await supabase
@@ -246,8 +314,9 @@ export default function AdminDashboard() {
             { id: 'overview', label: 'Resumo', icon: LayoutDashboard },
             { id: 'products', label: 'Produtos', icon: Package },
             { id: 'categories', label: 'Categorias', icon: Layers },
-            { id: 'gallery', label: 'Galeria', icon: ImageIcon },
             { id: 'orders', label: 'Encomendas', icon: ShoppingCart },
+            { id: 'gallery', label: 'Galeria', icon: ImageIcon },
+            { id: 'testimonials', label: 'Testemunhos', icon: MessageSquareQuote },
             { id: 'data', label: 'Dados', icon: Database },
             { id: 'settings', label: 'Definições', icon: Settings },
           ].map((item) => (
@@ -492,6 +561,105 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === 'testimonials' && (
+          <div className="space-y-12">
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm max-w-4xl">
+              <h2 className="text-xl font-serif text-brand-charcoal mb-8">Novo Testemunho</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Nome do Cliente</label>
+                    <input 
+                      type="text"
+                      value={newTestimonial.name}
+                      onChange={(e) => setNewTestimonial(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full bg-gray-50 border-none py-3 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm font-sans text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Avaliação (1-5)</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button 
+                          key={star}
+                          onClick={() => setNewTestimonial(prev => ({ ...prev, rating: star }))}
+                          className={`transition-all ${newTestimonial.rating >= star ? 'text-brand-gold scale-110' : 'text-gray-200 hover:text-brand-gold'}`}
+                        >
+                          <Star size={24} fill={newTestimonial.rating >= star ? 'currentColor' : 'none'} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Foto / Avatar</label>
+                    <div className="flex items-center gap-4">
+                      {newTestimonial.avatar_url && (
+                        <img src={newTestimonial.avatar_url} className="w-16 h-16 rounded-full object-cover border-2 border-brand-red/10" />
+                      )}
+                      <input 
+                        type="file" 
+                        ref={testimonialInputRef}
+                        onChange={handleTestimonialUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button 
+                        onClick={() => testimonialInputRef.current?.click()}
+                        className="flex-1 bg-gray-100 text-gray-600 px-6 py-3 text-[10px] font-bold tracking-widest uppercase rounded-sm hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                      >
+                        <UploadCloud size={16} /> {isUploading ? 'A carregar...' : 'Escolher Foto'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-full space-y-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Comentário</label>
+                  <textarea 
+                    value={newTestimonial.content}
+                    onChange={(e) => setNewTestimonial(prev => ({ ...prev, content: e.target.value }))}
+                    className="w-full bg-gray-50 border-none py-4 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm font-sans text-sm min-h-[120px]"
+                    placeholder="Escreva aqui o que o cliente disse..."
+                  />
+                </div>
+
+                <button 
+                  onClick={saveTestimonial}
+                  disabled={loading || isUploading}
+                  className="col-span-full bg-brand-red text-white py-4 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all shadow-lg disabled:opacity-50"
+                >
+                  {loading ? 'A guardar...' : 'Adicionar Testemunho'}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {testimonials.map((t) => (
+                <div key={t.id} className="bg-white p-6 border border-gray-100 rounded-sm shadow-sm relative group">
+                  <button 
+                    onClick={() => deleteTestimonial(t.id, t.avatar_url)}
+                    className="absolute top-4 right-4 p-2 text-gray-200 hover:text-brand-red transition-all"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <div className="flex items-center gap-4 mb-4">
+                    <img src={t.avatar_url || 'https://via.placeholder.com/100'} className="w-12 h-12 rounded-full object-cover" />
+                    <div>
+                      <h4 className="font-serif text-brand-charcoal">{t.name}</h4>
+                      <div className="flex text-brand-gold">
+                        {Array.from({ length: t.rating }).map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 font-sans leading-relaxed italic">"{t.content}"</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {activeTab === 'settings' && (
           <div className="bg-white p-12 border border-gray-100 rounded-sm shadow-sm max-w-4xl">
             <h2 className="text-xl font-serif text-brand-charcoal mb-8">Definições do Site</h2>
