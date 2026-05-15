@@ -1,10 +1,10 @@
 import { motion } from 'motion/react';
 
 const galleryImages = [
-  "https://images.unsplash.com/photo-1543412849-fd4726551ca0?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1563212891-2364c67995e8?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1628160450500-ee7e69f886f4?q=80&w=600&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1559113513-d5e09c1145ea?q=80&w=600&auto=format&fit=crop"
+  "/images/galeria-1.jpg",
+  "/images/galeria-2.jpg",
+  "/images/galeria-3.jpg",
+  "/images/galeria-4.jpg"
 ];
 
 export default function Gallery() {

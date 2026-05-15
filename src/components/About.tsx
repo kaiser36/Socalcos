@@ -16,8 +16,8 @@ export default function About({ onNavigate }: AboutProps) {
           className="lg:w-1/2 aspect-[4/5] overflow-hidden rounded-sm"
         >
           <img 
-            src="https://images.unsplash.com/photo-1543412849-fd4726551ca0?q=80&w=2670&auto=format&fit=crop" 
-            alt="Socalcos Shop" 
+            src="/images/loja-socalcos.jpg" 
+            alt="Loja Socalcos Vinhos & Gourmet" 
             className="w-full h-full object-cover"
           />
         </motion.div>
