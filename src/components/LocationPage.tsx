@@ -38,34 +38,42 @@ export default function LocationPage() {
             <Logo variant="vertical" className="w-64 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700" />
 
             <div className="space-y-4 w-full">
-              {contactInfo.map((item, index) => (
-                <motion.a
-                  key={index}
-                  href={item.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  className="flex items-center gap-6 p-2 rounded-sm border border-transparent hover:border-brand-gold/20 hover:bg-brand-charcoal/[0.02] transition-all group"
-                >
-                  <div className="w-14 h-14 bg-brand-charcoal text-white flex items-center justify-center rounded-sm shadow-xl group-hover:bg-brand-red transition-all duration-500">
-                    <item.icon size={22} strokeWidth={1.5} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-1">
-                      {item.icon === MapPin ? 'Morada' : 
-                       item.icon === Phone && item.text.startsWith('91') ? 'Telemóvel' :
-                       item.icon === Phone ? 'Telefone Fixo' :
-                       item.icon === MessageCircle ? 'WhatsApp' :
-                       item.icon === Mail ? 'Email' : 'Redes Sociais'}
-                    </span>
-                    <span className="text-brand-charcoal font-serif text-lg group-hover:text-brand-red transition-colors duration-500">
-                      {item.text}
-                    </span>
-                  </div>
-                </motion.a>
-              ))}
+              {contactInfo.map((item, index) => {
+                const isMail = item.icon === Mail;
+                const Component = isMail ? motion.div : motion.a;
+                const componentProps = isMail ? {} : {
+                  href: item.link,
+                  target: "_blank",
+                  rel: "noopener noreferrer"
+                };
+
+                return (
+                  <Component
+                    key={index}
+                    {...componentProps}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + index * 0.1 }}
+                    className={`flex items-center gap-6 p-2 rounded-sm border border-transparent ${isMail ? '' : 'hover:border-brand-gold/20 hover:bg-brand-charcoal/[0.02] cursor-pointer'} transition-all group`}
+                  >
+                    <div className={`w-14 h-14 bg-brand-charcoal text-white flex items-center justify-center rounded-sm shadow-xl ${isMail ? '' : 'group-hover:bg-brand-red'} transition-all duration-500`}>
+                      <item.icon size={22} strokeWidth={1.5} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-1">
+                        {item.icon === MapPin ? 'Morada' : 
+                         item.icon === Phone && item.text.startsWith('91') ? 'Telemóvel' :
+                         item.icon === Phone ? 'Telefone Fixo' :
+                         item.icon === MessageCircle ? 'WhatsApp' :
+                         item.icon === Mail ? 'Email' : 'Redes Sociais'}
+                      </span>
+                      <span className={`text-brand-charcoal font-serif text-lg ${isMail ? '' : 'group-hover:text-brand-red'} transition-colors duration-500`}>
+                        {item.text}
+                      </span>
+                    </div>
+                  </Component>
+                );
+              })}
             </div>
           </motion.div>
 
