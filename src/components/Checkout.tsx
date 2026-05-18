@@ -96,6 +96,27 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
 
         if (itemsError) throw itemsError;
 
+        // Disparar o envio do e-mail de confirmação via Vercel Serverless Function (em background)
+        fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            order_id: order.id,
+            customer_name: `${formData.nome} ${formData.apelido}`,
+            customer_email: formData.email,
+            total: total,
+            items: items.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price
+            }))
+          })
+        }).catch(err => {
+          console.error('Erro ao solicitar envio do e-mail:', err);
+        });
+
         onComplete();
       } catch (err: any) {
         alert('Erro ao processar pedido: ' + err.message);
