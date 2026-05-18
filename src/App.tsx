@@ -62,6 +62,7 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState({ heroImage: '/images/hero-banner.jpg' });
+  const [initialStoreCategory, setInitialStoreCategory] = useState<string | undefined>();
 
   useEffect(() => {
     fetchData();
@@ -170,7 +171,13 @@ function AppContent() {
         return (
           <>
             <Hero onNavigate={handleNavigate} backgroundImage={siteSettings.heroImage} />
-            <Categories categories={categories} />
+            <Categories 
+              categories={categories} 
+              onSelectCategory={(id) => {
+                setInitialStoreCategory(id);
+                setCurrentPage('store');
+              }} 
+            />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
             <About onNavigate={handleNavigate} />
             <Testimonials testimonials={testimonials} />
@@ -196,6 +203,7 @@ function AppContent() {
             onAddToCart={addToCart} 
             externalSearch={searchQuery}
             onExternalSearchChange={setSearchQuery}
+            initialCategory={initialStoreCategory}
           />
         );
       case 'detail':

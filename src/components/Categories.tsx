@@ -2,7 +2,12 @@ import { motion } from 'motion/react';
 
 import { Category } from '../types';
 
-export default function Categories({ categories }: { categories: Category[] }) {
+interface CategoriesProps {
+  categories: Category[];
+  onSelectCategory?: (id: string) => void;
+}
+
+export default function Categories({ categories, onSelectCategory }: CategoriesProps) {
   const mainCategories = categories.filter(c => !c.parent_id).slice(0, 4); // Top-level categories
   
   const getCategoryImage = (name: string) => {
@@ -26,7 +31,10 @@ export default function Categories({ categories }: { categories: Category[] }) {
           <motion.a 
             key={category.id}
             href={`#`}
-            onClick={(e) => { e.preventDefault(); }}
+            onClick={(e) => { 
+              e.preventDefault(); 
+              onSelectCategory?.(category.id);
+            }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}

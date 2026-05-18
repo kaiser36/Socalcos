@@ -10,9 +10,10 @@ interface StoreProps {
   onAddToCart: (product: Product) => void;
   externalSearch?: string;
   onExternalSearchChange?: (query: string) => void;
+  initialCategory?: string;
 }
 
-export default function Store({ onSelectProduct, onAddToCart, externalSearch, onExternalSearchChange }: StoreProps) {
+export default function Store({ onSelectProduct, onAddToCart, externalSearch, onExternalSearchChange, initialCategory }: StoreProps) {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
     setSearchQuery(val);
     onExternalSearchChange?.(val);
   };
-  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('Todos');
   const [selectedRegion, setSelectedRegion] = useState<string>('Todas');
   const [selectedProducer, setSelectedProducer] = useState<string>('Todos');
@@ -41,6 +42,15 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const itemsPerPage = 24;
+
+  useEffect(() => {
+    if (initialCategory && initialCategory !== selectedCategory) {
+      setSelectedCategory(initialCategory);
+      setSelectedSubcategory('Todos');
+      setSearchQuery('');
+      if (onExternalSearchChange) onExternalSearchChange('');
+    }
+  }, [initialCategory]);
 
   useEffect(() => {
     // Only run this once categories are loaded
