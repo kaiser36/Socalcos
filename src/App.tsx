@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Categories from './components/Categories';
@@ -40,33 +40,99 @@ export default function App() {
   );
 }
 
-function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'gallery' | 'location' | 'services' | 'login' | 'admin' | 'profile'>('home');
+// --- Hash Routing Helpers ---
+const PAGE_TO_HASH: Record<string, string> = {
+  home: '/',
+  store: '/loja',
+  about: '/sobre',
+  gallery: '/galeria',
+  location: '/localizacao',
+  services: '/servicos',
+  privacy: '/privacidade',
+  terms: '/termos',
+  checkout: '/checkout',
+  success: '/sucesso',
+  login: '/login',
+  admin: '/admin',
+  profile: '/perfil',
+};
 
-  const handleNavigate = (page: any) => {
+const HASH_TO_PAGE: Record<string, string> = Object.fromEntries(
+  Object.entries(PAGE_TO_HASH).map(([k, v]) => [v, k])
+);
+
+function parseHash(hash: string): { page: string; productId?: string; categoryId?: string } {
+  const path = hash.replace(/^#/, '') || '/';
+  
+  // Product detail: /produto/:id
+  const productMatch = path.match(/^\/produto\/(.+)$/);
+  if (productMatch) return { page: 'detail', productId: productMatch[1] };
+
+  // Store with category: /loja/:categoryId
+  const storeCatMatch = path.match(/^\/loja\/(.+)$/);
+  if (storeCatMatch) return { page: 'store', categoryId: storeCatMatch[1] };
+
+  // Static pages
+  const page = HASH_TO_PAGE[path];
+  return { page: page || 'home' };
+}
+
+function buildHash(page: string, extra?: string): string {
+  if (page === 'detail' && extra) return `#/produto/${extra}`;
+  if (page === 'store' && extra) return `#/loja/${extra}`;
+  return `#${PAGE_TO_HASH[page] || '/'}`;
+}
+
+function AppContent() {
+  const initialRoute = parseHash(window.location.hash);
+  const [currentPage, setCurrentPage] = useState<string>(initialRoute.page);
+
+  // Update the browser hash without triggering the hashchange listener
+  const pushHash = useCallback((hash: string) => {
+    if (window.location.hash !== hash) {
+      window.history.pushState(null, '', hash);
+    }
+  }, []);
+
+  const handleNavigate = useCallback((page: any) => {
     if (page === 'home') {
       fetchSettings();
       fetchData();
     }
     setCurrentPage(page);
-  };
+    pushHash(buildHash(page));
+  }, [pushHash]);
   const { user, isAdmin, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(initialRoute.productId || null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState({ heroImage: '/images/hero-banner.jpg' });
-  const [initialStoreCategory, setInitialStoreCategory] = useState<string | undefined>();
+  const [initialStoreCategory, setInitialStoreCategory] = useState<string | undefined>(initialRoute.categoryId);
 
   useEffect(() => {
     fetchData();
     fetchSettings();
+
+    // Listen for browser back/forward navigation
+    const onHashChange = () => {
+      const route = parseHash(window.location.hash);
+      setCurrentPage(route.page);
+      if (route.productId) {
+        setSelectedProductId(route.productId);
+      }
+      if (route.categoryId) {
+        setInitialStoreCategory(route.categoryId);
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
   const fetchSettings = async () => {
@@ -136,21 +202,41 @@ function AppContent() {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const selectedProduct = products.find(p => p.id === selectedProductId);
+  // For direct URL access to a product, fetch it if not already in state
+  const [directProduct, setDirectProduct] = useState<Product | null>(null);
+  useEffect(() => {
+    if (currentPage === 'detail' && selectedProductId) {
+      const found = products.find(p => p.id === selectedProductId);
+      if (found) {
+        setDirectProduct(null); // use the one from products array
+      } else {
+        // Product not in memory, fetch it directly
+        supabase.from('products').select('*').eq('id', selectedProductId).single()
+          .then(({ data }) => {
+            if (data) setDirectProduct(data);
+          });
+      }
+    }
+  }, [currentPage, selectedProductId, products]);
+
+  const selectedProduct = products.find(p => p.id === selectedProductId) || directProduct;
 
   const handleProductSelect = (id: string) => {
     setSelectedProductId(id);
     setCurrentPage('detail');
+    pushHash(buildHash('detail', id));
   };
 
   const handleCheckout = () => {
     setIsCartOpen(false);
     setCurrentPage('checkout');
+    pushHash(buildHash('checkout'));
   };
 
   const completeOrder = () => {
     setCartItems([]);
     setCurrentPage('success');
+    pushHash(buildHash('success'));
   };
 
   const handleSearch = (query: string) => {
@@ -176,6 +262,7 @@ function AppContent() {
               onSelectCategory={(id) => {
                 setInitialStoreCategory(id);
                 setCurrentPage('store');
+                pushHash(buildHash('store', id));
               }} 
             />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
