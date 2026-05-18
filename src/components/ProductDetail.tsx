@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Share2, X, Check, Copy, Heart } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Share2, X, Check, Copy, Heart, Compass, Calendar, Shield, Landmark, Globe, Wine, Percent, Info, Scale } from 'lucide-react';
 import { Product } from '../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -78,13 +78,15 @@ export default function ProductDetail({
   };
 
   const specs = [
-    { label: 'Região', value: product.region },
-    { label: 'Colheita', value: product.vintage || product.harvest },
-    { label: 'Produtor', value: product.producer },
-    { label: 'Capacidade', value: product.capacity },
-    { label: 'Teor Alcoólico', value: product.alcohol_content ? `${product.alcohol_content}% vol.` : null },
-    { label: 'Alergénios', value: product.allergens },
-    { label: 'Peso', value: product.weight ? `${product.weight} kg` : null },
+    { label: 'Região', value: product.region, icon: Compass },
+    { label: 'Colheita', value: product.vintage || product.harvest, icon: Calendar },
+    { label: 'Produtor', value: product.producer, icon: Shield },
+    { label: 'Propriedade / Quinta', value: product.property, icon: Landmark },
+    { label: 'País', value: product.country, icon: Globe },
+    { label: 'Capacidade', value: product.capacity, icon: Wine },
+    { label: 'Teor Alcoólico', value: product.alcohol_content ? `${product.alcohol_content}% vol.` : null, icon: Percent },
+    { label: 'Alergénios', value: product.allergens, icon: Info },
+    { label: 'Peso', value: product.weight ? `${product.weight} kg` : null, icon: Scale },
   ].filter(spec => spec.value && spec.value !== '-');
 
   const handleShare = () => {
@@ -190,8 +192,11 @@ export default function ProductDetail({
           {specs.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-8 text-sm border-y border-gray-100 py-6 mb-8">
               {specs.slice(0, 3).map((spec, index) => (
-                <div key={index}>
-                  <span className="block text-[10px] font-bold tracking-widest uppercase text-gray-400 mb-1">{spec.label}</span>
+                <div key={index} className="flex flex-col">
+                  <div className="flex items-center gap-1.5 mb-1 text-gray-400">
+                    {spec.icon && <spec.icon size={12} className="text-brand-gold" />}
+                    <span className="block text-[10px] font-bold tracking-widest uppercase">{spec.label}</span>
+                  </div>
                   <span className="font-sans text-brand-charcoal font-medium">{spec.value}</span>
                 </div>
               ))}
@@ -272,8 +277,11 @@ export default function ProductDetail({
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 max-w-xl animate-in fade-in duration-300">
                    {specs.length > 0 ? (
                      specs.map((spec, index) => (
-                       <div key={index} className="flex justify-between py-2.5 border-b border-gray-100 font-sans text-sm">
-                         <span className="font-semibold text-gray-400 text-xs uppercase tracking-wider">{spec.label}</span>
+                       <div key={index} className="flex justify-between items-center py-2.5 border-b border-gray-100 font-sans text-sm">
+                         <div className="flex items-center gap-2 text-gray-400">
+                           {spec.icon && <spec.icon size={14} className="text-brand-gold" />}
+                           <span className="font-semibold text-xs uppercase tracking-wider">{spec.label}</span>
+                         </div>
                          <span className="font-medium text-brand-charcoal">{spec.value}</span>
                        </div>
                      ))
