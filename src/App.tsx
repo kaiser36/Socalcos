@@ -28,6 +28,7 @@ import Success from './components/Success';
 import { supabase } from './lib/supabase';
 import { CartItem, Product, Category, GalleryImage, Testimonial } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Loader2 } from 'lucide-react';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
 import UserProfile from './components/auth/UserProfile';
@@ -294,13 +295,24 @@ function AppContent() {
           />
         );
       case 'detail':
-        return selectedProduct ? (
+        if (!selectedProduct) {
+          return (
+            <div className="min-h-screen flex items-center justify-center">
+              <Loader2 className="animate-spin text-brand-red" size={40} />
+            </div>
+          );
+        }
+        const categoryName = categories.find(c => c.id === selectedProduct.category_id)?.name;
+        return (
           <ProductDetail 
             product={selectedProduct} 
+            categoryName={categoryName}
             onBack={() => setCurrentPage('store')}
             onAddToCart={addToCart}
+            allProducts={products}
+            onSelectProduct={handleProductSelect}
           />
-        ) : null;
+        );
       case 'checkout':
         return (
           <Checkout 
