@@ -102,7 +102,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
     }
 
     const [productsRes, categoriesRes] = await Promise.all([
-      query.order('created_at', { ascending: false }).range(start, end),
+      query.order('has_photo', { ascending: false }).order('created_at', { ascending: false }).range(start, end),
       supabase.from('categories').select('*').order('name')
     ]);
 
@@ -132,16 +132,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
   const normalize = (str: string) => 
     str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
-  const filteredProducts = useMemo(() => {
-    return [...dbProducts].sort((a, b) => {
-      const aHasImage = a.image && a.image.trim() !== '' && !a.image.includes('placeholder');
-      const bHasImage = b.image && b.image.trim() !== '' && !b.image.includes('placeholder');
-      
-      if (aHasImage && !bHasImage) return -1;
-      if (!aHasImage && bHasImage) return 1;
-      return 0; // maintain the original created_at descending order
-    });
-  }, [dbProducts]);
+  const filteredProducts = dbProducts; // Already filtered and sorted server-side
 
   const uniqueValues = useMemo(() => {
     return {
