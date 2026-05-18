@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // For now, let's assume a specific email or any user with metadata 'role: admin'
     // You can customize this logic.
-    const adminEmails = ['tiago.dias.pereira@hotmail.com']; // Admin list
+    const adminEmails = ['tiago.dias.pereira@hotmail.com', 'socalcosvinhosegourmet@gmail.com']; // Admin list
     const isAdminUser = adminEmails.includes(user.email ?? '') || user.user_metadata?.role === 'admin';
     setIsAdmin(isAdminUser);
   };
