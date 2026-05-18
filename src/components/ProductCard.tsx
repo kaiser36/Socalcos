@@ -24,6 +24,10 @@ export default function ProductCard(props: ProductCardProps) {
           layoutId={`product-image-${id}`}
           src={image} 
           alt={name}
+          onError={(e) => {
+            e.currentTarget.src = '/images/logo-v.png';
+            e.currentTarget.className = 'h-1/2 object-contain group-hover:scale-110 transition-transform duration-500 z-10 opacity-20';
+          }}
           className="h-full object-contain group-hover:scale-110 transition-transform duration-500 z-10"
         />
         <div className="absolute inset-0 bg-brand-red/0 group-hover:bg-brand-red/5 transition-colors z-0" />

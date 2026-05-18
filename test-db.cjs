@@ -7,8 +7,12 @@ const supabaseKey = env.match(/VITE_SUPABASE_ANON_KEY=(.*)/)[1].trim().replace(/
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function check() {
-  const { data, error } = await supabase.from('products').select('name, image, has_photo').eq('has_photo', false).limit(5);
-  console.log("Error:", error);
-  console.log("False Data:", data);
+  const { data, error } = await supabase.from('products').select('image').limit(5000);
+  const counts = {};
+  data.forEach(d => {
+    counts[d.image] = (counts[d.image] || 0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+  console.log("Most common images overall:", sorted.slice(0, 10));
 }
 check();
