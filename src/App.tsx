@@ -342,7 +342,7 @@ function AppContent() {
           setCurrentPage('login');
           return null;
         }
-        return <UserProfile />;
+        return <UserProfile onAddToCart={addToCart} onNavigate={handleNavigate} />;
       default:
         return null;
     }

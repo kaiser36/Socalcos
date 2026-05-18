@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Share2, X, Check, Copy } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Share2, X, Check, Copy, Heart } from 'lucide-react';
 import { Product } from '../types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import ProductCard from './ProductCard';
 
 interface ProductDetailProps {
@@ -25,12 +26,56 @@ export default function ProductDetail({
   const [activeTab, setActiveTab] = useState<'descricao' | 'especificacoes' | 'envio'>('descricao');
   const [showLightbox, setShowLightbox] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const { user } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(product.price);
   const displayCategory = categoryName || product.category || 'Gourmet';
 
   // Fix apostrophe typographical issue dynamically
   const displayName = product.name.replace(/´/g, "'");
+
+  useEffect(() => {
+    const checkWishlist = () => {
+      if (!user?.id) {
+        setIsWishlisted(false);
+        return;
+      }
+      const stored = localStorage.getItem(`socalcos_wishlist_${user.id}`);
+      if (stored) {
+        try {
+          const list = JSON.parse(stored);
+          setIsWishlisted(list.includes(product.id));
+        } catch {
+          setIsWishlisted(false);
+        }
+      } else {
+        setIsWishlisted(false);
+      }
+    };
+
+    checkWishlist();
+    window.addEventListener('wishlist-update', checkWishlist);
+    return () => window.removeEventListener('wishlist-update', checkWishlist);
+  }, [user, product.id]);
+
+  const handleWishlistToggle = () => {
+    if (!user?.id) {
+      alert('Por favor, inicie sessão para adicionar vinhos aos seus favoritos!');
+      return;
+    }
+    const stored = localStorage.getItem(`socalcos_wishlist_${user.id}`);
+    let list: string[] = [];
+    if (stored) {
+      try { list = JSON.parse(stored); } catch {}
+    }
+    const updated = list.includes(product.id) 
+      ? list.filter(item => item !== product.id)
+      : [...list, product.id];
+    
+    localStorage.setItem(`socalcos_wishlist_${user.id}`, JSON.stringify(updated));
+    window.dispatchEvent(new Event('wishlist-update'));
+  };
 
   const specs = [
     { label: 'Região', value: product.region },
@@ -107,12 +152,12 @@ export default function ProductDetail({
           <div className="flex justify-between items-start mb-4">
              <span className="text-xs font-bold tracking-[0.2em] uppercase text-brand-gold">{displayCategory}</span>
              <button 
-               onClick={handleShare}
-               className="text-gray-300 hover:text-brand-red transition-colors p-1 rounded-full hover:bg-gray-50"
-               title="Partilhar Produto"
-             >
-               <Share2 size={18} />
-             </button>
+                onClick={handleShare}
+                className="text-gray-300 hover:text-brand-red transition-colors p-1 rounded-full hover:bg-gray-50"
+                title="Partilhar Produto"
+              >
+                <Share2 size={18} />
+              </button>
           </div>
 
           <h1 className="text-5xl font-serif text-brand-charcoal mb-4 leading-tight">{displayName}</h1>
@@ -179,6 +224,15 @@ export default function ProductDetail({
               className={`flex-1 text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm ${product.stock > 0 ? 'bg-brand-red hover:bg-brand-red/90' : 'bg-gray-300 cursor-not-allowed'}`}
             >
               <ShoppingBag size={18} /> {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
+            </button>
+
+            {/* Favorite heart button */}
+            <button 
+              onClick={handleWishlistToggle}
+              className={`w-14 h-14 border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center transition-all duration-300 rounded-sm ${isWishlisted ? 'text-brand-red border-brand-red bg-brand-red/5' : 'text-gray-400 hover:bg-gray-50'}`}
+              title={isWishlisted ? "Remover de favoritos" : "Adicionar aos favoritos"}
+            >
+              <Heart size={20} className={isWishlisted ? "fill-brand-red" : ""} />
             </button>
           </div>
 

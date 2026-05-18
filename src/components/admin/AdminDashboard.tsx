@@ -17,8 +17,9 @@ import {
   ShoppingCart,
   Database,
   UploadCloud,
-  Image as ImageIcon,
-  Loader2
+  ImageIcon,
+  Loader2,
+  Gift
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Product, GalleryImage } from '../../types';
@@ -26,9 +27,10 @@ import ProductModal from './ProductModal';
 import CategoryManager from './CategoryManager';
 import DataManager from './DataManager';
 import { Star, MessageSquareQuote } from 'lucide-react';
-
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'gallery' | 'orders' | 'data' | 'settings' | 'testimonials'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'categories' | 'gallery' | 'orders' | 'data' | 'settings' | 'testimonials' | 'coupons'>('overview');
+  const [coupons, setCoupons] = useState<{ code: string; label: string; desc: string; expiry: string; }[]>([]);
+  const [newCoupon, setNewCoupon] = useState({ code: '', label: '', desc: '', expiry: '' });
   const [products, setProducts] = useState<Product[]>([]);
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [testimonials, setTestimonials] = useState<any[]>([]);
@@ -99,6 +101,15 @@ export default function AdminDashboard() {
     if (settingsRes.data) {
       const hero = settingsRes.data.find(s => s.key === 'hero_image')?.value;
       if (hero) setHeroImageUrl(hero);
+      
+      const couponsVal = settingsRes.data.find(s => s.key === 'coupons')?.value;
+      if (couponsVal) {
+        try {
+          setCoupons(JSON.parse(couponsVal));
+        } catch (e) {
+          console.error('Error parsing coupons:', e);
+        }
+      }
     }
 
     setLoading(false);
@@ -241,6 +252,55 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteCoupon = async (code: string) => {
+    if (!confirm(`Tem a certeza que deseja eliminar o cupão ${code}?`)) return;
+
+    const updatedCoupons = coupons.filter(c => c.code !== code);
+    setLoading(true);
+
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({ key: 'coupons', value: JSON.stringify(updatedCoupons) }, { onConflict: 'key' });
+
+    if (!error) {
+      setCoupons(updatedCoupons);
+      alert('Cupão eliminado com sucesso!');
+    } else {
+      alert('Erro ao eliminar cupão: ' + error.message);
+    }
+    setLoading(false);
+  };
+
+  const handleAddCoupon = async () => {
+    if (!newCoupon.code || !newCoupon.label || !newCoupon.desc || !newCoupon.expiry) {
+      alert('Por favor, preencha todos os campos do cupão!');
+      return;
+    }
+
+    const uppercaseCode = newCoupon.code.toUpperCase().replace(/\s+/g, '');
+    
+    if (coupons.some(c => c.code === uppercaseCode)) {
+      alert('Já existe um cupão com este código!');
+      return;
+    }
+
+    const updatedCoupons = [...coupons, { ...newCoupon, code: uppercaseCode }];
+    setLoading(true);
+    
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({ key: 'coupons', value: JSON.stringify(updatedCoupons) }, { onConflict: 'key' });
+
+    if (!error) {
+      setCoupons(updatedCoupons);
+      setNewCoupon({ code: '', label: '', desc: '', expiry: '' });
+      alert('Cupão adicionado com sucesso!');
+    } else {
+      alert('Erro ao guardar cupão: ' + error.message);
+    }
+    setLoading(false);
+  };
+
   const deleteTestimonial = async (id: string, avatar_url: string) => {
     if (!confirm('Tem a certeza que deseja eliminar este testemunho?')) return;
 
@@ -317,6 +377,7 @@ export default function AdminDashboard() {
             { id: 'orders', label: 'Encomendas', icon: ShoppingCart },
             { id: 'gallery', label: 'Galeria', icon: ImageIcon },
             { id: 'testimonials', label: 'Testemunhos', icon: MessageSquareQuote },
+            { id: 'coupons', label: 'Cupões', icon: Gift },
             { id: 'data', label: 'Dados', icon: Database },
             { id: 'settings', label: 'Definições', icon: Settings },
           ].map((item) => (
@@ -347,6 +408,7 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-serif text-brand-charcoal capitalize">
               {activeTab === 'overview' ? 'Painel de Controlo' : 
                activeTab === 'gallery' ? 'Galeria de Imagens' :
+               activeTab === 'coupons' ? 'Gestor de Cupões' :
                activeTab}
             </h1>
           </div>
@@ -657,6 +719,93 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-500 font-sans leading-relaxed italic">"{t.content}"</p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+        {activeTab === 'coupons' && (
+          <div className="space-y-8 max-w-5xl">
+            {/* Add Coupon Form */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
+              <h3 className="text-lg font-serif text-brand-charcoal mb-6">Criar Novo Cupão</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Código do Cupão</label>
+                  <input 
+                    type="text" 
+                    placeholder="EX: SOCALCOS10"
+                    value={newCoupon.code}
+                    onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value.toUpperCase() })}
+                    className="w-full bg-gray-50 border-none py-3 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm font-sans text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Título / Destaque</label>
+                  <input 
+                    type="text" 
+                    placeholder="EX: 10% Desconto"
+                    value={newCoupon.label}
+                    onChange={(e) => setNewCoupon({ ...newCoupon, label: e.target.value })}
+                    className="w-full bg-gray-50 border-none py-3 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm font-sans text-sm"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Validade</label>
+                  <input 
+                    type="text" 
+                    placeholder="EX: 31 de Dezembro, 2026 ou Sem expiração"
+                    value={newCoupon.expiry}
+                    onChange={(e) => setNewCoupon({ ...newCoupon, expiry: e.target.value })}
+                    className="w-full bg-gray-50 border-none py-3 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm font-sans text-sm"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-3">
+                  <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400">Descrição do Benefício</label>
+                  <input 
+                    type="text" 
+                    placeholder="EX: 10% de desconto direto em toda a gama de vinhos tintos."
+                    value={newCoupon.desc}
+                    onChange={(e) => setNewCoupon({ ...newCoupon, desc: e.target.value })}
+                    className="w-full bg-gray-50 border-none py-3 px-4 outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm font-sans text-sm"
+                  />
+                </div>
+                <button 
+                  onClick={handleAddCoupon}
+                  disabled={loading}
+                  className="bg-brand-red text-white py-3.5 text-xs font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={16} /> Adicionar Cupão
+                </button>
+              </div>
+            </div>
+
+            {/* Coupons List */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
+              <h3 className="text-lg font-serif text-brand-charcoal mb-6">Lista de Cupões Ativos</h3>
+              {coupons.length === 0 ? (
+                <p className="text-sm font-sans text-gray-400 italic">Nenhum cupão ativo. Crie um novo cupão acima.</p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {coupons.map((c, idx) => (
+                    <div key={idx} className="py-6 flex items-center justify-between gap-6 first:pt-0 last:pb-0">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-base font-bold text-brand-red tracking-wide">{c.code}</span>
+                          <span className="text-[9px] font-black bg-brand-gold/10 text-brand-gold px-2 py-0.5 rounded-sm uppercase tracking-wider">{c.label}</span>
+                        </div>
+                        <p className="text-sm text-gray-500 font-sans">{c.desc}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Validade: {c.expiry}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteCoupon(c.code)}
+                        className="text-gray-300 hover:text-brand-red p-2 transition-colors"
+                        title="Eliminar Cupão"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

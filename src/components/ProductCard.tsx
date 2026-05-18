@@ -1,6 +1,7 @@
-import { Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Star, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
-
+import { useAuth } from '../context/AuthContext';
 import { Product } from '../types';
 
 interface ProductCardProps extends Product {
@@ -10,8 +11,54 @@ interface ProductCardProps extends Product {
 
 export default function ProductCard(props: ProductCardProps) {
   const { id, name, vintage, region, price, image, rating, onSelect, onAddToCart } = props;
+  const { user } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  
   const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(price);
   
+  useEffect(() => {
+    const checkWishlist = () => {
+      if (!user?.id) {
+        setIsWishlisted(false);
+        return;
+      }
+      const stored = localStorage.getItem(`socalcos_wishlist_${user.id}`);
+      if (stored) {
+        try {
+          const list = JSON.parse(stored);
+          setIsWishlisted(list.includes(id));
+        } catch {
+          setIsWishlisted(false);
+        }
+      } else {
+        setIsWishlisted(false);
+      }
+    };
+
+    checkWishlist();
+    window.addEventListener('wishlist-update', checkWishlist);
+    return () => window.removeEventListener('wishlist-update', checkWishlist);
+  }, [user, id]);
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user?.id) {
+      alert('Por favor, inicie sessão para adicionar vinhos aos seus favoritos!');
+      return;
+    }
+    const stored = localStorage.getItem(`socalcos_wishlist_${user.id}`);
+    let list: string[] = [];
+    if (stored) {
+      try { list = JSON.parse(stored); } catch {}
+    }
+    const updated = list.includes(id) 
+      ? list.filter(item => item !== id)
+      : [...list, id];
+    
+    localStorage.setItem(`socalcos_wishlist_${user.id}`, JSON.stringify(updated));
+    window.dispatchEvent(new Event('wishlist-update'));
+  };
+
   return (
     <motion.div 
       whileHover={{ y: -10 }}
@@ -31,6 +78,15 @@ export default function ProductCard(props: ProductCardProps) {
           className="h-full object-contain group-hover:scale-110 transition-transform duration-500 z-10"
         />
         <div className="absolute inset-0 bg-brand-red/0 group-hover:bg-brand-red/5 transition-colors z-0" />
+        
+        {/* Elegant Heart Button */}
+        <button 
+          onClick={handleWishlistToggle}
+          className="absolute top-4 right-4 z-20 p-2.5 bg-white/80 hover:bg-white text-gray-400 hover:text-brand-red rounded-full shadow-md hover:scale-110 transition-all duration-300"
+          title={isWishlisted ? "Remover de favoritos" : "Adicionar aos favoritos"}
+        >
+          <Heart size={14} className={isWishlisted ? "fill-brand-red text-brand-red" : ""} />
+        </button>
       </div>
       
       <div className="flex gap-1 mb-3">
