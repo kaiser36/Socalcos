@@ -5,7 +5,7 @@ import Logo from './Logo';
 export default function Footer({ onNavigate }: { onNavigate: (page: any) => void }) {
   return (
     <footer className="bg-white pt-8 pb-4 border-t border-brand-charcoal/5">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
         <div className="col-span-1 md:col-span-1">
           <Logo className="mb-4" variant="vertical" />
           <p className="text-[10px] font-bold tracking-widest text-brand-charcoal uppercase leading-relaxed mb-4">
@@ -20,6 +20,14 @@ export default function Footer({ onNavigate }: { onNavigate: (page: any) => void
             <li><button onClick={() => onNavigate('location')} className="hover:text-brand-red transition-colors text-left">Localização</button></li>
             <li><button onClick={() => onNavigate('gallery')} className="hover:text-brand-red transition-colors text-left">Galeria</button></li>
             <li><button onClick={() => onNavigate('admin')} className="hover:text-brand-red transition-colors text-left opacity-30 hover:opacity-100">Backoffice</button></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-4">Serviços</h4>
+          <ul className="space-y-2 text-sm font-sans text-brand-charcoal">
+            <li><button onClick={() => onNavigate('services')} className="hover:text-brand-red transition-colors text-left text-balance">Entregas em Hotel</button></li>
+            <li><button onClick={() => onNavigate('services')} className="hover:text-brand-red transition-colors text-left text-balance">Entregas Nacionais e Internacionais</button></li>
           </ul>
         </div>
 

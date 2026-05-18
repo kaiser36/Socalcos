@@ -13,6 +13,7 @@ import AboutPage from './components/AboutPage';
 import Gallery from './components/Gallery';
 import GalleryPage from './components/GalleryPage';
 import LocationPage from './components/LocationPage';
+import DeliveryServicesPage from './components/DeliveryServicesPage';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsConditions from './components/TermsConditions';
 import Testimonials from './components/Testimonials';
@@ -40,7 +41,7 @@ export default function App() {
 }
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'gallery' | 'location' | 'login' | 'admin' | 'profile'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'store' | 'detail' | 'checkout' | 'success' | 'about' | 'gallery' | 'location' | 'services' | 'login' | 'admin' | 'profile'>('home');
 
   const handleNavigate = (page: any) => {
     if (page === 'home') {
@@ -182,6 +183,8 @@ function AppContent() {
         return <GalleryPage />;
       case 'location':
         return <LocationPage />;
+      case 'services':
+        return <DeliveryServicesPage />;
       case 'privacy':
         return <PrivacyPolicy />;
       case 'terms':
