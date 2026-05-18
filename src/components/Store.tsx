@@ -132,7 +132,16 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
   const normalize = (str: string) => 
     str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
-  const filteredProducts = dbProducts; // Already filtered server-side
+  const filteredProducts = useMemo(() => {
+    return [...dbProducts].sort((a, b) => {
+      const aHasImage = a.image && a.image.trim() !== '' && !a.image.includes('placeholder');
+      const bHasImage = b.image && b.image.trim() !== '' && !b.image.includes('placeholder');
+      
+      if (aHasImage && !bHasImage) return -1;
+      if (!aHasImage && bHasImage) return 1;
+      return 0; // maintain the original created_at descending order
+    });
+  }, [dbProducts]);
 
   const uniqueValues = useMemo(() => {
     return {
