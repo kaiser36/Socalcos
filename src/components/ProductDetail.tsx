@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Share2, X, Check, Copy, Heart, Compass, Calendar, Shield, Landmark, Globe, Wine, Percent, Info, Scale } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Share2, X, Check, Copy, Heart, Compass, Calendar, Shield, Landmark, Globe, Wine, Percent, Info, Scale, Loader2, Mail } from 'lucide-react';
 import { Product } from '../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,8 @@ export default function ProductDetail({
   const [showToast, setShowToast] = useState(false);
   const { user } = useAuth();
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isRequestingRestock, setIsRequestingRestock] = useState(false);
+  const [restockRequested, setRestockRequested] = useState(false);
 
   const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(product.price);
   const displayCategory = categoryName || product.category || 'Gourmet';
@@ -75,6 +77,38 @@ export default function ProductDetail({
     
     localStorage.setItem(`socalcos_wishlist_${user.id}`, JSON.stringify(updated));
     window.dispatchEvent(new Event('wishlist-update'));
+  };
+
+  const handleRequestRestock = async () => {
+    if (!user?.email) {
+      alert('Por favor, inicie sessão para solicitar este produto.');
+      return;
+    }
+    
+    setIsRequestingRestock(true);
+    try {
+      const response = await fetch('/api/request-restock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: user.user_metadata?.full_name || 'Cliente Registado',
+          customer_email: user.email,
+          product_id: product.id,
+          product_name: product.name,
+          product_sku: product.sku
+        })
+      });
+
+      if (!response.ok) throw new Error('Falha ao enviar pedido');
+      
+      setRestockRequested(true);
+      setTimeout(() => setRestockRequested(false), 5000);
+    } catch (err) {
+      console.error(err);
+      alert('Ocorreu um erro ao enviar o pedido. Tente novamente mais tarde.');
+    } finally {
+      setIsRequestingRestock(false);
+    }
   };
 
   const specs = [
@@ -223,13 +257,31 @@ export default function ProductDetail({
               </button>
             </div>
             
-            <button 
-              onClick={() => product.stock > 0 && onAddToCart(product, quantity)}
-              disabled={product.stock <= 0}
-              className={`flex-1 text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm ${product.stock > 0 ? 'bg-brand-red hover:bg-brand-red/90' : 'bg-gray-300 cursor-not-allowed'}`}
-            >
-              <ShoppingBag size={18} /> {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
-            </button>
+            {product.stock > 0 ? (
+              <button 
+                onClick={() => onAddToCart(product, quantity)}
+                className="flex-1 bg-brand-red text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-red/90"
+              >
+                <ShoppingBag size={18} /> Adicionar ao Carrinho
+              </button>
+            ) : (
+              user ? (
+                <button 
+                  onClick={handleRequestRestock}
+                  disabled={isRequestingRestock || restockRequested}
+                  className="flex-1 bg-brand-charcoal text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-charcoal/90 disabled:opacity-50"
+                  title="Solicitar reposição de stock"
+                >
+                  {isRequestingRestock ? <Loader2 size={18} className="animate-spin" /> : (restockRequested ? <Check size={18} /> : <Mail size={18} />)}
+                  {isRequestingRestock ? 'A Enviar...' : (restockRequested ? 'Pedido Enviado' : 'Solicitar Produto')}
+                </button>
+              ) : (
+                <div className="flex-1 bg-gray-100 text-gray-400 h-14 flex flex-col items-center justify-center rounded-sm">
+                  <span className="text-xs font-bold tracking-[0.2em] uppercase">Esgotado</span>
+                  <span className="text-[9px] font-sans text-gray-500">Inicie sessão para solicitar</span>
+                </div>
+              )
+            )}
 
             {/* Favorite heart button */}
             <button 
