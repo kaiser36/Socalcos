@@ -501,8 +501,9 @@ export default function AdminDashboard() {
               <button 
                 onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-sm border transition-all text-[10px] font-bold tracking-widest uppercase ${showOnlyFavorites ? 'bg-brand-gold text-white border-brand-gold' : 'bg-white text-gray-400 border-gray-100'}`}
+                title="Filtrar produtos que aparecem no módulo 'A Nossa Seleção' da página principal"
               >
-                <Plus size={14} /> {showOnlyFavorites ? 'Ver Todos' : 'Ver Favoritos'}
+                <Plus size={14} /> {showOnlyFavorites ? 'Ver Todos' : 'Ver Seleção'}
               </button>
             </div>
 
@@ -510,7 +511,7 @@ export default function AdminDashboard() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 w-10 text-center">Fav</th>
+                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 w-10 text-center" title="Adicionar à Nossa Seleção na página principal">Sel</th>
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Produto</th>
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Estado</th>
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center">Stock</th>
@@ -522,7 +523,7 @@ export default function AdminDashboard() {
                   {products.map((product) => (
                     <tr key={product.id} className="hover:bg-brand-red/[0.02] transition-colors group">
                       <td className="px-6 py-4 text-center">
-                        <button onClick={() => toggleFavorite(product)} className={`transition-all ${product.is_favorite ? 'text-brand-gold scale-125' : 'text-gray-200 hover:text-brand-gold'}`}>
+                        <button onClick={() => toggleFavorite(product)} title={product.is_favorite ? 'Remover d\'A Nossa Seleção' : 'Adicionar à Nossa Seleção'} className={`transition-all ${product.is_favorite ? 'text-brand-gold scale-125' : 'text-gray-200 hover:text-brand-gold'}`}>
                           <Plus size={18} className={product.is_favorite ? 'fill-current' : ''} />
                         </button>
                       </td>

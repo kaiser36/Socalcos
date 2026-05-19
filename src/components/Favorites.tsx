@@ -21,7 +21,7 @@ export default function Favorites({ onSelectProduct, onAddToCart, products }: Fa
     <section className="py-24 bg-[#efefed]/30">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -29,7 +29,7 @@ export default function Favorites({ onSelectProduct, onAddToCart, products }: Fa
           >
             Os Nossos Favoritos
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
