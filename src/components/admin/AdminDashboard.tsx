@@ -513,6 +513,7 @@ export default function AdminDashboard() {
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 w-10 text-center">Fav</th>
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Produto</th>
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Estado</th>
+                    <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 text-center">Stock</th>
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400">Preço</th>
                     <th className="px-6 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-400 text-right">Ações</th>
                   </tr>
@@ -537,6 +538,11 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4">
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${product.published ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                           {product.published ? 'Publicado' : 'Draft'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${product.stock > 0 ? 'bg-green-50 text-green-600' : 'bg-brand-red/10 text-brand-red'}`}>
+                          {product.stock > 0 ? `${product.stock} un.` : 'Sem Stock'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-brand-charcoal">{formatPrice(product.price)}</td>
