@@ -19,7 +19,9 @@ import {
   UploadCloud,
   ImageIcon,
   Loader2,
-  Gift
+  Gift,
+  Menu,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Product, GalleryImage } from '../../types';
@@ -53,6 +55,7 @@ export default function AdminDashboard() {
   const { signOut } = useAuth();
 
   const [stats, setStats] = useState({ products: 0, orders: 0, totalSales: 0 });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -362,11 +365,27 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-brand-charcoal text-white flex flex-col fixed inset-y-0">
-        <div className="p-8">
-          <h1 className="text-2xl font-serif tracking-tighter">Socalcos<span className="text-brand-red">.</span></h1>
-          <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Backoffice Admin</p>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-brand-charcoal text-white flex flex-col transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-serif tracking-tighter">Socalcos<span className="text-brand-red">.</span></h1>
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Backoffice Admin</p>
+          </div>
+          <button 
+            className="md:hidden text-gray-400 hover:text-white transition-colors"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <X size={24} />
+          </button>
         </div>
 
         <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
@@ -383,7 +402,7 @@ export default function AdminDashboard() {
           ].map((item) => (
             <button 
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
+              onClick={() => { setActiveTab(item.id as any); setIsSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === item.id ? 'bg-brand-red text-white shadow-lg shadow-brand-red/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
             >
               <item.icon size={18} /> {item.label}
@@ -402,10 +421,16 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 flex-1 p-12">
-        <header className="flex justify-between items-center mb-12">
-          <div>
-            <h1 className="text-3xl font-serif text-brand-charcoal capitalize">
+      <main className="flex-1 md:ml-64 p-6 md:p-12 min-h-screen w-full overflow-x-hidden">
+        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8 md:mb-12">
+          <div className="flex items-center gap-4">
+            <button 
+              className="md:hidden p-2 -ml-2 text-brand-charcoal hover:text-brand-red transition-colors"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <h1 className="text-2xl md:text-3xl font-serif text-brand-charcoal capitalize truncate">
               {activeTab === 'overview' ? 'Painel de Controlo' : 
                activeTab === 'gallery' ? 'Galeria de Imagens' :
                activeTab === 'coupons' ? 'Gestor de Cupões' :

@@ -21,7 +21,8 @@ import {
   ChevronUp, 
   ArrowRight,
   RefreshCw,
-  Trash2
+  Trash2,
+  Menu
 } from 'lucide-react';
 
 interface UserProfileProps {
@@ -34,6 +35,7 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
   
   // Navigation State
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'wishlist' | 'account' | 'rewards'>('overview');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Form State
   const [loading, setLoading] = useState(false);
@@ -266,29 +268,57 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
               </button>
             </div>
 
-            {/* Mobile Navigation (Scrollable Horizontal Pill Bar) */}
-            <div className="lg:hidden flex gap-2 overflow-x-auto pb-4 scrollbar-none -mx-6 px-6">
-              {[
-                { id: 'overview', label: 'Painel Geral', icon: LayoutDashboard },
-                { id: 'orders', label: 'Encomendas', icon: ShoppingBag, count: orders.length },
-                { id: 'wishlist', label: 'Favoritos', icon: Heart, count: wishlistIds.length },
-                { id: 'account', label: 'Dados', icon: User },
-                { id: 'rewards', label: 'Cupões', icon: Gift }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-5 py-3 rounded-full text-[10px] font-bold tracking-wider uppercase whitespace-nowrap transition-all duration-300 ${activeTab === tab.id ? 'bg-brand-red text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100'}`}
-                >
-                  <tab.icon size={12} /> 
-                  {tab.label}
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full ${activeTab === tab.id ? 'bg-white text-brand-red' : 'bg-brand-red/10 text-brand-red'}`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+            {/* Mobile Navigation (Dropdown) */}
+            <div className="lg:hidden mb-6">
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="w-full flex items-center justify-between bg-white border border-gray-100 px-4 py-3 rounded-sm shadow-sm"
+              >
+                <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-brand-charcoal">
+                  <Menu size={16} className="text-brand-red" /> 
+                  {activeTab === 'overview' && 'Painel Geral'}
+                  {activeTab === 'orders' && 'As Minhas Encomendas'}
+                  {activeTab === 'wishlist' && 'Os Meus Favoritos'}
+                  {activeTab === 'account' && 'Dados de Conta'}
+                  {activeTab === 'rewards' && 'Cupões & Ofertas'}
+                </div>
+                <ChevronDown size={14} className={`transform transition-transform text-gray-400 ${isMobileMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isMobileMenuOpen && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden bg-white border border-t-0 border-gray-100 rounded-b-sm shadow-sm"
+                  >
+                    <div className="flex flex-col">
+                      {[
+                        { id: 'overview', label: 'Painel Geral', icon: LayoutDashboard },
+                        { id: 'orders', label: 'Encomendas', icon: ShoppingBag, count: orders.length },
+                        { id: 'wishlist', label: 'Favoritos', icon: Heart, count: wishlistIds.length },
+                        { id: 'account', label: 'Dados de Conta', icon: User },
+                        { id: 'rewards', label: 'Cupões & Ofertas', icon: Gift }
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          onClick={() => { setActiveTab(tab.id as any); setIsMobileMenuOpen(false); }}
+                          className={`flex items-center gap-3 px-4 py-3 text-[10px] font-bold tracking-widest uppercase transition-all ${activeTab === tab.id ? 'bg-brand-red/5 text-brand-red border-l-2 border-brand-red' : 'text-gray-500 border-l-2 border-transparent hover:bg-gray-50'}`}
+                        >
+                          <tab.icon size={14} /> 
+                          {tab.label}
+                          {tab.count !== undefined && tab.count > 0 && (
+                            <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-brand-red/10 text-brand-red">
+                              {tab.count}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </aside>
 

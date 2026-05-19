@@ -380,22 +380,140 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
               exit={{ height: 0, opacity: 0 }}
               className="lg:hidden overflow-hidden mb-8 bg-white border-b border-gray-100"
             >
-              <div className="py-6 flex flex-wrap gap-3">
-                <button
-                  onClick={() => { setSelectedCategory('Todos'); setIsFilterOpen(false); }}
-                  className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === 'Todos' ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
-                >
-                  Todos
-                </button>
-                {categories.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => { setSelectedCategory(cat.id); setIsFilterOpen(false); }}
-                    className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === cat.id ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
+              <div className="py-6 space-y-8">
+                {/* Categorias */}
+                <div>
+                  <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal mb-4">Categorias</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => { setSelectedCategory('Todos'); setSelectedSubcategory('Todos'); }}
+                      className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === 'Todos' ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
+                    >
+                      Todos
+                    </button>
+                    {categories.filter(c => !c.parent_id).map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => { setSelectedCategory(cat.id); setSelectedSubcategory('Todos'); }}
+                        className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === cat.id ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Mobile Subcategories */}
+                  {selectedCategory !== 'Todos' && availableSubcategories.length > 0 && (
+                     <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-50">
+                        {availableSubcategories.map(sub => (
+                          <button
+                            key={sub.id}
+                            onClick={() => setSelectedSubcategory(sub.id)}
+                            className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase border rounded-full transition-all ${selectedSubcategory === sub.id ? 'bg-brand-charcoal border-brand-charcoal text-white' : 'border-gray-200 text-gray-500'}`}
+                          >
+                            {sub.name}
+                          </button>
+                        ))}
+                     </div>
+                  )}
+                </div>
+
+                {/* Região e Preço */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal mb-4">Região</h4>
+                    <select
+                      value={selectedRegion}
+                      onChange={(e) => setSelectedRegion(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-100 py-3 px-4 text-xs font-sans outline-none rounded-sm"
+                    >
+                      <option value="Todas">Todas as Regiões</option>
+                      {uniqueValues.regions.map(r => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Preço Máx</h4>
+                      <span className="text-xs font-bold text-brand-red">{new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(maxPrice)}</span>
+                    </div>
+                    <input 
+                      type="range"
+                      min="0"
+                      max={Math.max(...dbProducts.map(p => p.price), 1000)}
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(Number(e.target.value))}
+                      className="w-full accent-brand-red h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Produtor, Ano, Capacidade */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  <div>
+                    <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal mb-4">Produtor</h4>
+                    <select
+                      value={selectedProducer}
+                      onChange={(e) => setSelectedProducer(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-100 py-3 px-4 text-xs font-sans outline-none rounded-sm"
+                    >
+                      <option value="Todos">Todos</option>
+                      {uniqueValues.producers.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal mb-4">Ano</h4>
+                    <select
+                      value={selectedVintage}
+                      onChange={(e) => setSelectedVintage(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-100 py-3 px-4 text-xs font-sans outline-none rounded-sm"
+                    >
+                      <option value="Todos">Todos</option>
+                      {uniqueValues.vintages.map(v => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal mb-4">Volume</h4>
+                    <select
+                      value={selectedCapacity}
+                      onChange={(e) => setSelectedCapacity(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-100 py-3 px-4 text-xs font-sans outline-none rounded-sm"
+                    >
+                      <option value="Todas">Todas</option>
+                      {uniqueValues.capacities.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-4 flex justify-between items-center border-t border-gray-50">
+                   <button 
+                     onClick={() => {
+                       setSelectedCategory('Todos');
+                       setSelectedSubcategory('Todos');
+                       setSelectedRegion('Todas');
+                       setSelectedProducer('Todos');
+                       setSelectedVintage('Todos');
+                       setSelectedCapacity('Todas');
+                       setMaxPrice(Math.max(...dbProducts.map(p => p.price), 1000));
+                     }}
+                     className="text-[10px] font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red"
+                   >
+                     Limpar
+                   </button>
+                   <button 
+                     onClick={() => setIsFilterOpen(false)}
+                     className="px-8 py-3 bg-brand-charcoal text-white text-[10px] font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red transition-all"
+                   >
+                     Aplicar Filtros
+                   </button>
+                </div>
               </div>
             </motion.div>
           )}

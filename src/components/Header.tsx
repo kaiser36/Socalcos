@@ -1,4 +1,4 @@
-import { Search, ShoppingCart, User, ShieldCheck, X } from 'lucide-react';
+import { Search, ShoppingCart, User, ShieldCheck, X, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
@@ -35,6 +35,13 @@ export default function Header({
     } else {
       onNavigate('login');
     }
+  };
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleMobileNav = (page: string) => {
+    setIsMobileMenuOpen(false);
+    onNavigate(page);
   };
 
   return (
@@ -121,8 +128,49 @@ export default function Header({
               <User size={20} />
             )}
           </button>
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="md:hidden transition-colors p-2 text-brand-charcoal hover:text-brand-red"
+          >
+            <Menu size={24} />
+          </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[100] bg-brand-charcoal/95 backdrop-blur-md flex flex-col items-center justify-center"
+          >
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute top-8 right-6 text-white/50 hover:text-white p-2 transition-colors"
+            >
+              <X size={32} />
+            </button>
+
+            <nav className="flex flex-col items-center gap-8 text-2xl font-serif text-white">
+              <button onClick={() => handleMobileNav('home')} className="hover:text-brand-gold transition-colors">Início</button>
+              <button onClick={() => handleMobileNav('store')} className="hover:text-brand-gold transition-colors">Loja</button>
+              <button onClick={() => handleMobileNav('about')} className="hover:text-brand-gold transition-colors">Quem somos</button>
+              <button onClick={() => handleMobileNav('location')} className="hover:text-brand-gold transition-colors">Localização</button>
+              
+              <div className="w-16 h-px bg-white/20 my-2"></div>
+              
+              <button 
+                onClick={() => { setIsMobileMenuOpen(false); handleUserClick(); }} 
+                className="hover:text-brand-gold transition-colors flex items-center gap-3 text-lg font-sans tracking-widest uppercase"
+              >
+                <User size={18} /> {user ? 'A Minha Conta' : 'Iniciar Sessão'}
+              </button>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
