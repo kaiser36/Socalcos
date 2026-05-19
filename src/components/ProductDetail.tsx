@@ -353,8 +353,7 @@ export default function ProductDetail({
                        <h4 className="font-bold text-brand-charcoal text-[10px] uppercase tracking-wider mb-2 text-brand-gold">Portugal Continental</h4>
                        <ul className="space-y-1 text-xs text-gray-500">
                          <li>• Entrega rápida em 24h/48h úteis</li>
-                         <li>• Envio via CTT Expresso Segurado</li>
-                         <li>• Envio Grátis em compras superiores a 150€</li>
+                         <li>• Levantamento em loja disponível</li>
                        </ul>
                      </div>
                      <div className="p-3.5 bg-gray-50 border border-gray-100 rounded-sm">
