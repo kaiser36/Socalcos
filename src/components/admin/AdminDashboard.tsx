@@ -21,7 +21,9 @@ import {
   Loader2,
   Gift,
   Menu,
-  X
+  X,
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Product, GalleryImage } from '../../types';
@@ -54,7 +56,15 @@ export default function AdminDashboard() {
   const [newTestimonial, setNewTestimonial] = useState({ name: '', content: '', rating: 5, avatar_url: '' });
   const { signOut } = useAuth();
 
-  const [stats, setStats] = useState({ products: 0, orders: 0, totalSales: 0 });
+  const [stats, setStats] = useState({ 
+    products: 0, 
+    orders: 0, 
+    totalSales: 0, 
+    averageOrderValue: 0, 
+    pendingOrders: 0, 
+    lowStockProducts: 0, 
+    activeCustomers: 0 
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -90,11 +100,25 @@ export default function AdminDashboard() {
       supabase.from('testimonials').select('*').order('created_at', { ascending: false })
     ]);
 
-    if (productsRes.data) setProducts(productsRes.data);
+    if (productsRes.data) {
+      setProducts(productsRes.data);
+      const lowStock = productsRes.data.filter(p => p.stock <= 5).length;
+      setStats(prev => ({ ...prev, lowStockProducts: lowStock }));
+    }
+    
     if (ordersRes.data) {
       setOrders(ordersRes.data);
       const total = ordersRes.data.reduce((acc, curr) => acc + (curr.total || 0), 0);
-      setStats(prev => ({ ...prev, orders: ordersRes.data?.length || 0, totalSales: total }));
+      const pending = ordersRes.data.filter(o => o.status === 'pending').length;
+      const uniqueEmails = new Set(ordersRes.data.map(o => o.customer_email).filter(Boolean));
+      setStats(prev => ({ 
+        ...prev, 
+        orders: ordersRes.data?.length || 0, 
+        totalSales: total,
+        averageOrderValue: ordersRes.data?.length ? total / ordersRes.data.length : 0,
+        pendingOrders: pending,
+        activeCustomers: uniqueEmails.size
+      }));
     }
     if (categoriesRes.data) setCategories(categoriesRes.data);
     if (galleryRes.data) setGallery(galleryRes.data);
@@ -469,33 +493,84 @@ export default function AdminDashboard() {
         </header>
 
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
-              <div className="flex items-center gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Vendas Totais */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-gold/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+              <div className="flex items-center gap-4 mb-4 relative z-10">
                 <div className="w-12 h-12 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center">
                   <TrendingUp size={24} />
                 </div>
                 <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Vendas Totais</h4>
               </div>
-              <p className="text-3xl font-serif text-brand-charcoal">{formatPrice(stats.totalSales)}</p>
+              <p className="text-3xl font-serif text-brand-charcoal relative z-10">{formatPrice(stats.totalSales)}</p>
             </div>
-            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
-              <div className="flex items-center gap-4 mb-4">
+
+            {/* Ticket Médio */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-gold/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+              <div className="flex items-center gap-4 mb-4 relative z-10">
+                <div className="w-12 h-12 bg-brand-gold/10 text-brand-gold rounded-full flex items-center justify-center">
+                  <TrendingUp size={24} className="rotate-45" />
+                </div>
+                <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Ticket Médio</h4>
+              </div>
+              <p className="text-3xl font-serif text-brand-charcoal relative z-10">{formatPrice(stats.averageOrderValue)}</p>
+            </div>
+
+            {/* Encomendas Totais */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+              <div className="flex items-center gap-4 mb-4 relative z-10">
                 <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center">
                   <ShoppingBag size={24} />
                 </div>
                 <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Encomendas</h4>
               </div>
-              <p className="text-3xl font-serif text-brand-charcoal">{stats.orders}</p>
+              <p className="text-3xl font-serif text-brand-charcoal relative z-10">{stats.orders}</p>
             </div>
-            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center">
-                  <Package size={24} />
+
+            {/* Encomendas Pendentes */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+              <div className="flex items-center gap-4 mb-4 relative z-10">
+                <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center">
+                  <Clock size={24} />
                 </div>
-                <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Produtos Ativos</h4>
+                <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Pendentes</h4>
               </div>
-              <p className="text-3xl font-serif text-brand-charcoal">{stats.products}</p>
+              <p className="text-3xl font-serif text-brand-charcoal relative z-10">{stats.pendingOrders}</p>
+            </div>
+
+            {/* Clientes Ativos */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+              <div className="flex items-center gap-4 mb-4 relative z-10">
+                <div className="w-12 h-12 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center">
+                  <Users size={24} />
+                </div>
+                <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Clientes Únicos</h4>
+              </div>
+              <p className="text-3xl font-serif text-brand-charcoal relative z-10">{stats.activeCustomers}</p>
+            </div>
+
+            {/* Produtos / Baixo Stock */}
+            <div className="bg-white p-8 border border-gray-100 rounded-sm shadow-sm relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+              <div className="flex items-center justify-between mb-4 relative z-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center">
+                    <Package size={24} />
+                  </div>
+                  <h4 className="text-xs font-bold tracking-widest uppercase text-gray-400">Produtos</h4>
+                </div>
+                {stats.lowStockProducts > 0 && (
+                  <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-brand-red bg-brand-red/10 px-2.5 py-1 rounded-full" title="Produtos com stock inferior a 5">
+                    <AlertTriangle size={12} /> {stats.lowStockProducts} baixo stock
+                  </div>
+                )}
+              </div>
+              <p className="text-3xl font-serif text-brand-charcoal relative z-10">{stats.products}</p>
             </div>
           </div>
         )}
