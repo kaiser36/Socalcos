@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HeroProps {
   onNavigate: (page: 'home' | 'store' | 'about') => void;
@@ -6,6 +7,8 @@ interface HeroProps {
 }
 
 export default function Hero({ onNavigate, backgroundImage = '/images/hero-banner.jpg' }: HeroProps) {
+  const { t } = useLanguage();
+
   return (
     <section className="relative h-screen w-full overflow-hidden">
       {/* Background with parallax effect simulation */}
@@ -28,7 +31,7 @@ export default function Hero({ onNavigate, backgroundImage = '/images/hero-banne
           transition={{ delay: 0.5, duration: 0.8 }}
           className="text-5xl md:text-7xl font-medium tracking-tight mb-6 max-w-4xl"
         >
-          Socalcos Vinhos & Gourmet
+          {t('hero.title')}
         </motion.h1>
 
         <motion.p
@@ -37,7 +40,7 @@ export default function Hero({ onNavigate, backgroundImage = '/images/hero-banne
           transition={{ delay: 0.7, duration: 0.8 }}
           className="text-lg md:text-xl font-light mb-10 max-w-2xl text-white/90 leading-relaxed font-sans"
         >
-          Descubra a herança líquida do Porto. Uma coleção onde a tradição encontra a excelência contemporânea.
+          {t('hero.subtitle')}
         </motion.p>
 
         <motion.button
@@ -49,7 +52,7 @@ export default function Hero({ onNavigate, backgroundImage = '/images/hero-banne
           whileTap={{ scale: 0.95 }}
           className="bg-brand-red text-white px-10 py-4 text-sm font-semibold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all shadow-lg"
         >
-          Ver Loja
+          {t('hero.button')}
         </motion.button>
       </div>
     </section>

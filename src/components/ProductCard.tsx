@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Star, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Product } from '../types';
 
 interface ProductCardProps extends Product {
@@ -10,10 +11,12 @@ interface ProductCardProps extends Product {
 }
 
 export default function ProductCard(props: ProductCardProps) {
-  const { id, name, vintage, region, price, image, rating, onSelect, onAddToCart } = props;
+  const { id, name, name_en, vintage, region, price, image, rating, onSelect, onAddToCart } = props;
   const { user } = useAuth();
+  const { language, t } = useLanguage();
   const [isWishlisted, setIsWishlisted] = useState(false);
   
+  const displayName = (language === 'en' && name_en) ? name_en : name;
   const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(price);
   
   useEffect(() => {
@@ -70,7 +73,7 @@ export default function ProductCard(props: ProductCardProps) {
         <motion.img 
           layoutId={`product-image-${id}`}
           src={image} 
-          alt={name}
+          alt={displayName}
           onError={(e) => {
             e.currentTarget.src = '/images/logo-v.png';
             e.currentTarget.className = 'h-1/2 object-contain group-hover:scale-110 transition-transform duration-500 z-10 opacity-20';
@@ -99,7 +102,7 @@ export default function ProductCard(props: ProductCardProps) {
         ))}
       </div>
 
-      <h3 className="text-sm font-serif text-brand-charcoal mb-1 line-clamp-1">{name}</h3>
+      <h3 className="text-sm font-serif text-brand-charcoal mb-1 line-clamp-1">{displayName}</h3>
       <p className="text-[10px] text-gray-500 mb-4 font-sans tracking-tight">
         {region} • {vintage}
       </p>
@@ -113,7 +116,7 @@ export default function ProductCard(props: ProductCardProps) {
         }}
         className="w-full py-3 px-4 border border-brand-charcoal/10 text-[10px] font-bold tracking-widest uppercase hover:bg-brand-red hover:text-white hover:border-brand-red transition-all duration-300 rounded-sm"
       >
-        Adicionar ao carrinho
+        {t('store.addToCart')}
       </button>
     </motion.div>
   );

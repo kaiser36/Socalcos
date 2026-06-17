@@ -28,6 +28,7 @@ import Success from './components/Success';
 import { supabase } from './lib/supabase';
 import { CartItem, Product, Category, GalleryImage, Testimonial } from './types';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Loader2 } from 'lucide-react';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -35,9 +36,11 @@ import UserProfile from './components/auth/UserProfile';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
@@ -84,6 +87,38 @@ function buildHash(page: string, extra?: string): string {
   return `#${PAGE_TO_HASH[page] || '/'}`;
 }
 
+const PAGE_TITLES: Record<string, string> = {
+  home: 'Socalcos Heritage | Vinhos & Gourmet',
+  store: 'Loja | Socalcos Heritage',
+  about: 'Quem Somos | Socalcos Heritage',
+  gallery: 'Galeria | Socalcos Heritage',
+  location: 'Localização | Socalcos Heritage',
+  services: 'Serviços de Entrega | Socalcos Heritage',
+  privacy: 'Política de Privacidade | Socalcos Heritage',
+  terms: 'Termos e Condições | Socalcos Heritage',
+  checkout: 'Finalizar Compra | Socalcos Heritage',
+  success: 'Encomenda Confirmada | Socalcos Heritage',
+  login: 'Iniciar Sessão | Socalcos Heritage',
+  admin: 'Painel de Administração | Socalcos Heritage',
+  profile: 'A Minha Conta | Socalcos Heritage',
+};
+
+const PAGE_DESCRIPTIONS: Record<string, string> = {
+  home: 'Descubra a herança líquida do Porto. Uma coleção onde a tradição encontra a excelência contemporânea.',
+  store: 'Explore a nossa seleção de vinhos tintos, brancos, espumantes e produtos gourmet selecionados.',
+  about: 'Saiba mais sobre a nossa história, a tradição dos socalcos e o nosso compromisso com a excelência.',
+  gallery: 'Visite a galeria de imagens da Socalcos Heritage e sinta a atmosfera dos nossos espaços e vinhas.',
+  location: 'Encontre-nos no Porto. Saiba como chegar e os nossos horários de funcionamento.',
+  services: 'Informações sobre os nossos serviços de entrega rápida e segura de vinhos e produtos gourmet.',
+  privacy: 'Consulte a política de privacidade da Socalcos Heritage.',
+  terms: 'Consulte os termos e condições da Socalcos Heritage.',
+  checkout: 'Finalize a sua encomenda com segurança na Socalcos Heritage.',
+  success: 'Obrigado pela sua encomenda na Socalcos Heritage!',
+  login: 'Inicie sessão na sua conta da Socalcos Heritage.',
+  admin: 'Painel de administração da Socalcos Heritage.',
+  profile: 'Consulte o seu perfil e histórico de encomendas na Socalcos Heritage.',
+};
+
 function AppContent() {
   const initialRoute = parseHash(window.location.hash);
   const [currentPage, setCurrentPage] = useState<string>(initialRoute.page);
@@ -110,12 +145,22 @@ function AppContent() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(initialRoute.productId || null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('socalcos-cart');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState({ heroImage: '/images/hero-banner.jpg' });
   const [initialStoreCategory, setInitialStoreCategory] = useState<string | undefined>(initialRoute.categoryId);
+
+  useEffect(() => {
+    localStorage.setItem('socalcos-cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   useEffect(() => {
     fetchData();
@@ -221,6 +266,24 @@ function AppContent() {
   }, [currentPage, selectedProductId, products]);
 
   const selectedProduct = products.find(p => p.id === selectedProductId) || directProduct;
+
+  useEffect(() => {
+    let title = PAGE_TITLES[currentPage] || 'Socalcos Heritage | Vinhos & Gourmet';
+    let description = PAGE_DESCRIPTIONS[currentPage] || 'Descubra a herança líquida do Porto. Uma coleção onde a tradição encontra a excelência contemporânea.';
+
+    if (currentPage === 'detail' && selectedProduct) {
+      title = `${selectedProduct.name} | Socalcos Heritage`;
+      if (selectedProduct.description) {
+        description = selectedProduct.description;
+      }
+    }
+
+    document.title = title;
+    const metaDesc = document.getElementById('meta-description');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', description.substring(0, 160));
+    }
+  }, [currentPage, selectedProduct]);
 
   const handleProductSelect = (id: string) => {
     setSelectedProductId(id);

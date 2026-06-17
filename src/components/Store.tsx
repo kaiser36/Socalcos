@@ -3,6 +3,7 @@ import { Search, Filter, X, ChevronDown, Loader2, MapPin, Users, Calendar, Box, 
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { Category, Product } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 import ProductCard from './ProductCard';
 
 interface StoreProps {
@@ -14,6 +15,7 @@ interface StoreProps {
 }
 
 export default function Store({ onSelectProduct, onAddToCart, externalSearch, onExternalSearchChange, initialCategory }: StoreProps) {
+  const { language } = useLanguage();
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,32 +215,38 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                   <span className="flex items-center gap-2"><Layers size={14} className="opacity-40" /> Todos</span>
                   <span className="text-[10px] opacity-40">({totalProductsCount})</span>
                 </button>
-                {categories.filter(c => !c.parent_id).map(cat => (
-                  <div key={cat.id} className="space-y-3">
-                    <button
-                      onClick={() => { setSelectedCategory(cat.id); setSelectedSubcategory('Todos'); }}
-                      className={`w-full text-left text-sm font-sans transition-all flex items-center justify-between group ${selectedCategory === cat.id ? 'text-brand-red font-bold' : 'text-gray-500 hover:text-brand-charcoal'}`}
-                    >
-                      <span>{cat.name}</span>
-                      <span className="text-[10px] opacity-40">({categoryCounts[cat.id] || 0})</span>
-                    </button>
-                    
-                    {/* Sub-categorias dinâmicas no mesmo bloco */}
-                    {selectedCategory === cat.id && availableSubcategories.length > 0 && (
-                      <div className="flex flex-col gap-2 pl-4 border-l border-gray-100 mt-2 animate-in slide-in-from-top-1 duration-300">
-                        {availableSubcategories.map(sub => (
-                          <button
-                            key={sub.id}
-                            onClick={() => setSelectedSubcategory(sub.id)}
-                            className={`text-left text-xs font-sans transition-all ${selectedSubcategory === sub.id ? 'text-brand-red font-bold' : 'text-gray-400 hover:text-brand-charcoal'}`}
-                          >
-                            • {sub.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {categories.filter(c => !c.parent_id).map(cat => {
+                  const catDisplayName = (language === 'en' && cat.name_en) ? cat.name_en : cat.name;
+                  return (
+                    <div key={cat.id} className="space-y-3">
+                      <button
+                        onClick={() => { setSelectedCategory(cat.id); setSelectedSubcategory('Todos'); }}
+                        className={`w-full text-left text-sm font-sans transition-all flex items-center justify-between group ${selectedCategory === cat.id ? 'text-brand-red font-bold' : 'text-gray-500 hover:text-brand-charcoal'}`}
+                      >
+                        <span>{catDisplayName}</span>
+                        <span className="text-[10px] opacity-40">({categoryCounts[cat.id] || 0})</span>
+                      </button>
+                      
+                      {/* Sub-categorias dinâmicas no mesmo bloco */}
+                      {selectedCategory === cat.id && availableSubcategories.length > 0 && (
+                        <div className="flex flex-col gap-2 pl-4 border-l border-gray-100 mt-2 animate-in slide-in-from-top-1 duration-300">
+                          {availableSubcategories.map(sub => {
+                            const subDisplayName = (language === 'en' && sub.name_en) ? sub.name_en : sub.name;
+                            return (
+                              <button
+                                key={sub.id}
+                                onClick={() => setSelectedSubcategory(sub.id)}
+                                className={`text-left text-xs font-sans transition-all ${selectedSubcategory === sub.id ? 'text-brand-red font-bold' : 'text-gray-400 hover:text-brand-charcoal'}`}
+                              >
+                                • {subDisplayName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -391,28 +399,34 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                     >
                       Todos
                     </button>
-                    {categories.filter(c => !c.parent_id).map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSelectedCategory(cat.id); setSelectedSubcategory('Todos'); }}
-                        className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === cat.id ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
+                    {categories.filter(c => !c.parent_id).map(cat => {
+                      const catDisplayName = (language === 'en' && cat.name_en) ? cat.name_en : cat.name;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setSelectedCategory(cat.id); setSelectedSubcategory('Todos'); }}
+                          className={`px-4 py-2 text-xs font-bold tracking-widest uppercase border rounded-full transition-all ${selectedCategory === cat.id ? 'bg-brand-red border-brand-red text-white' : 'border-gray-200 text-gray-500'}`}
+                        >
+                          {catDisplayName}
+                        </button>
+                      );
+                    })}
                   </div>
                   {/* Mobile Subcategories */}
                   {selectedCategory !== 'Todos' && availableSubcategories.length > 0 && (
                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-50">
-                        {availableSubcategories.map(sub => (
-                          <button
-                            key={sub.id}
-                            onClick={() => setSelectedSubcategory(sub.id)}
-                            className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase border rounded-full transition-all ${selectedSubcategory === sub.id ? 'bg-brand-charcoal border-brand-charcoal text-white' : 'border-gray-200 text-gray-500'}`}
-                          >
-                            {sub.name}
-                          </button>
-                        ))}
+                        {availableSubcategories.map(sub => {
+                          const subDisplayName = (language === 'en' && sub.name_en) ? sub.name_en : sub.name;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => setSelectedSubcategory(sub.id)}
+                              className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase border rounded-full transition-all ${selectedSubcategory === sub.id ? 'bg-brand-charcoal border-brand-charcoal text-white' : 'border-gray-200 text-gray-500'}`}
+                            >
+                              {subDisplayName}
+                            </button>
+                          );
+                        })}
                      </div>
                   )}
                 </div>

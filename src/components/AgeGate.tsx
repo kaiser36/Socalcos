@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from './Logo';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function AgeGate() {
+  const { t } = useLanguage();
   const [isOver18, setIsOver18] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -45,13 +47,11 @@ export default function AgeGate() {
           <Logo variant="vertical" className="mx-auto mb-12 w-48" />
           
           <h2 className="text-3xl md:text-4xl font-serif text-brand-charcoal mb-6">
-            Bem-vindo à Socalcos
+            {t('age.welcome')}
           </h2>
           
           <p className="text-gray-500 font-sans mb-12 leading-relaxed">
-            Para entrar no nosso site e explorar a nossa seleção de vinhos e gourmet, 
-            deve confirmar que tem idade legal para consumo de bebidas alcoólicas 
-            no seu país de residência.
+            {t('age.desc')}
           </p>
 
           <div className="flex flex-col md:flex-row gap-4 justify-center">
@@ -59,18 +59,18 @@ export default function AgeGate() {
               onClick={handleConfirm}
               className="bg-brand-red text-white px-12 py-5 text-sm font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red/90 transition-all shadow-lg"
             >
-              Sim, tenho mais de 18 anos
+              {t('age.yes')}
             </button>
             <button 
               onClick={() => window.location.href = 'https://www.google.com'}
               className="bg-gray-100 text-gray-500 px-12 py-5 text-sm font-bold tracking-widest uppercase rounded-sm hover:bg-gray-200 transition-all"
             >
-              Não, sair
+              {t('age.no')}
             </button>
           </div>
 
           <p className="mt-12 text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-            Seja responsável. Beba com moderação.
+            {t('age.responsible')}
           </p>
         </motion.div>
       </motion.div>

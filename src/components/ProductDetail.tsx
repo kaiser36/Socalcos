@@ -3,6 +3,7 @@ import { ArrowLeft, Minus, Plus, ShoppingBag, Star, Share2, X, Check, Copy, Hear
 import { Product } from '../types';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import ProductCard from './ProductCard';
 
 interface ProductDetailProps {
@@ -31,11 +32,13 @@ export default function ProductDetail({
   const [isRequestingRestock, setIsRequestingRestock] = useState(false);
   const [restockRequested, setRestockRequested] = useState(false);
 
+  const { language, t } = useLanguage();
   const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(product.price);
   const displayCategory = categoryName || product.category || 'Gourmet';
 
   // Fix apostrophe typographical issue dynamically
-  const displayName = product.name.replace(/´/g, "'");
+  const displayName = ((language === 'en' && product.name_en) ? product.name_en : product.name).replace(/´/g, "'");
+  const displayDescription = (language === 'en' && product.description_en) ? product.description_en : product.description;
 
   useEffect(() => {
     const checkWishlist = () => {
@@ -112,15 +115,15 @@ export default function ProductDetail({
   };
 
   const specs = [
-    { label: 'Região', value: product.region, icon: Compass },
-    { label: 'Colheita', value: product.vintage || product.harvest, icon: Calendar },
-    { label: 'Produtor', value: product.producer, icon: Shield },
-    { label: 'Propriedade / Quinta', value: product.property, icon: Landmark },
-    { label: 'País', value: product.country, icon: Globe },
-    { label: 'Capacidade', value: product.capacity, icon: Wine },
-    { label: 'Teor Alcoólico', value: product.alcohol_content ? `${product.alcohol_content}% vol.` : null, icon: Percent },
-    { label: 'Alergénios', value: product.allergens, icon: Info },
-    { label: 'Peso', value: product.weight ? `${product.weight} kg` : null, icon: Scale },
+    { label: language === 'en' ? 'Region' : 'Região', value: product.region, icon: Compass },
+    { label: language === 'en' ? 'Harvest' : 'Colheita', value: product.vintage || product.harvest, icon: Calendar },
+    { label: language === 'en' ? 'Producer' : 'Produtor', value: product.producer, icon: Shield },
+    { label: language === 'en' ? 'Estate / Winery' : 'Propriedade / Quinta', value: product.property, icon: Landmark },
+    { label: language === 'en' ? 'Country' : 'País', value: language === 'en' && product.country === 'Portugal' ? 'Portugal' : product.country, icon: Globe },
+    { label: language === 'en' ? 'Capacity' : 'Capacidade', value: product.capacity, icon: Wine },
+    { label: language === 'en' ? 'Alcohol Content' : 'Teor Alcoólico', value: product.alcohol_content ? `${product.alcohol_content}% vol.` : null, icon: Percent },
+    { label: language === 'en' ? 'Allergens' : 'Alergénios', value: language === 'en' && product.allergens?.toLowerCase().includes('contém sulfitos') ? 'Contains Sulfites' : product.allergens, icon: Info },
+    { label: language === 'en' ? 'Weight' : 'Peso', value: product.weight ? `${product.weight} kg` : null, icon: Scale },
   ].filter(spec => spec.value && spec.value !== '-');
 
   const handleShare = () => {
@@ -150,7 +153,7 @@ export default function ProductDetail({
         onClick={onBack}
         className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red transition-colors mb-12"
       >
-        <ArrowLeft size={16} /> Voltar à Loja
+        <ArrowLeft size={16} /> {language === 'en' ? 'Back to Store' : 'Voltar à Loja'}
       </button>
 
       <div className="flex flex-col lg:flex-row gap-16 lg:gap-24 mb-24">
@@ -215,7 +218,7 @@ export default function ProductDetail({
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <span className={`text-[10px] font-bold tracking-widest uppercase ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {product.stock > 0 ? 'Em Stock' : 'Esgotado'}
+                {product.stock > 0 ? (language === 'en' ? 'In Stock' : 'Em Stock') : (language === 'en' ? 'Out of Stock' : 'Esgotado')}
               </span>
             </div>
           </div>
@@ -262,7 +265,7 @@ export default function ProductDetail({
                 onClick={() => onAddToCart(product, quantity)}
                 className="flex-1 bg-brand-red text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-red/90"
               >
-                <ShoppingBag size={18} /> Adicionar ao Carrinho
+                <ShoppingBag size={18} /> {t('store.addToCart')}
               </button>
             ) : (
               user ? (
@@ -270,15 +273,15 @@ export default function ProductDetail({
                   onClick={handleRequestRestock}
                   disabled={isRequestingRestock || restockRequested}
                   className="flex-1 bg-brand-charcoal text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-charcoal/90 disabled:opacity-50"
-                  title="Solicitar reposição de stock"
+                  title={language === 'en' ? 'Request stock restock' : 'Solicitar reposição de stock'}
                 >
                   {isRequestingRestock ? <Loader2 size={18} className="animate-spin" /> : (restockRequested ? <Check size={18} /> : <Mail size={18} />)}
-                  {isRequestingRestock ? 'A Enviar...' : (restockRequested ? 'Pedido Enviado' : 'Solicitar Produto')}
+                  {isRequestingRestock ? (language === 'en' ? 'Sending...' : 'A Enviar...') : (restockRequested ? (language === 'en' ? 'Request Sent' : 'Pedido Enviado') : (language === 'en' ? 'Request Product' : 'Solicitar Produto'))}
                 </button>
               ) : (
                 <div className="flex-1 bg-gray-100 text-gray-400 h-14 flex flex-col items-center justify-center rounded-sm">
-                  <span className="text-xs font-bold tracking-[0.2em] uppercase">Esgotado</span>
-                  <span className="text-[9px] font-sans text-gray-500">Inicie sessão para solicitar</span>
+                  <span className="text-xs font-bold tracking-[0.2em] uppercase">{language === 'en' ? 'Out of Stock' : 'Esgotado'}</span>
+                  <span className="text-[9px] font-sans text-gray-500">{language === 'en' ? 'Log in to request' : 'Inicie sessão para solicitar'}</span>
                 </div>
               )
             )}
@@ -300,19 +303,19 @@ export default function ProductDetail({
                   onClick={() => setActiveTab('descricao')}
                   className={`text-xs font-bold tracking-widest uppercase pb-2 transition-all border-b-2 ${activeTab === 'descricao' ? 'border-brand-red text-brand-charcoal' : 'border-transparent text-gray-400 hover:text-brand-charcoal'}`}
                 >
-                  Descrição
+                  {language === 'en' ? 'Description' : 'Descrição'}
                 </button>
                 <button 
                   onClick={() => setActiveTab('especificacoes')}
                   className={`text-xs font-bold tracking-widest uppercase pb-2 transition-all border-b-2 ${activeTab === 'especificacoes' ? 'border-brand-red text-brand-charcoal' : 'border-transparent text-gray-400 hover:text-brand-charcoal'}`}
                 >
-                  Ficha Técnica
+                  {language === 'en' ? 'Technical Sheet' : 'Ficha Técnica'}
                 </button>
                 <button 
                   onClick={() => setActiveTab('envio')}
                   className={`text-xs font-bold tracking-widest uppercase pb-2 transition-all border-b-2 ${activeTab === 'envio' ? 'border-brand-red text-brand-charcoal' : 'border-transparent text-gray-400 hover:text-brand-charcoal'}`}
                 >
-                  Envio & Embalagem
+                  {language === 'en' ? 'Shipping & Packaging' : 'Envio & Embalagem'}
                 </button>
              </div>
 
@@ -321,7 +324,7 @@ export default function ProductDetail({
                {activeTab === 'descricao' && (
                  <div 
                    className="text-gray-600 leading-relaxed font-sans text-sm animate-in fade-in duration-300"
-                   dangerouslySetInnerHTML={{ __html: product.description || "Uma expressão sublime do terroir excecional da região. Este exemplar destaca-se pela sua estrutura refinada, equilíbrio impecável e um final longo e persistente que cativa os sentidos mais exigentes." }}
+                   dangerouslySetInnerHTML={{ __html: displayDescription || (language === 'en' ? "A sublime expression of the region's exceptional terroir. This vintage stands out for its refined structure, impeccable balance, and a long, persistent finish that captivates the most demanding senses." : "Uma expressão sublime do terroir excecional da região. Este exemplar destaca-se pela sua estrutura refinada, equilíbrio impecável e um final longo e persistente que cativa os sentidos mais exigentes.") }}
                  />
                )}
 
@@ -338,7 +341,7 @@ export default function ProductDetail({
                        </div>
                      ))
                    ) : (
-                     <p className="text-xs text-gray-400 italic">Especificações não disponíveis para este produto.</p>
+                     <p className="text-xs text-gray-400 italic">{language === 'en' ? 'Specifications not available for this product.' : 'Especificações não disponíveis para este produto.'}</p>
                    )}
                  </div>
                )}
@@ -346,22 +349,22 @@ export default function ProductDetail({
                {activeTab === 'envio' && (
                  <div className="space-y-4 max-w-xl font-sans text-sm text-gray-600 leading-relaxed animate-in fade-in duration-300">
                    <p>
-                     Garantimos que as suas garrafas e produtos gourmet chegam em perfeitas condições. Utilizamos <strong>embalagens certificadas de alta resistência térmica e anti-choque</strong> de forma a mitigar qualquer risco no transporte.
+                     {language === 'en' ? 'We guarantee that your bottles and gourmet products arrive in perfect condition. We use certified high thermal and anti-shock packaging to mitigate transport risks.' : 'Garantimos que as suas garrafas e produtos gourmet chegam em perfeitas condições. Utilizamos embalagens certificadas de alta resistência térmica e anti-choque de forma a mitigar qualquer risco no transporte.'}
                    </p>
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                      <div className="p-3.5 bg-gray-50 border border-gray-100 rounded-sm">
-                       <h4 className="font-bold text-brand-charcoal text-[10px] uppercase tracking-wider mb-2 text-brand-gold">Portugal Continental</h4>
+                       <h4 className="font-bold text-brand-charcoal text-[10px] uppercase tracking-wider mb-2 text-brand-gold">{language === 'en' ? 'Mainland Portugal' : 'Portugal Continental'}</h4>
                        <ul className="space-y-1 text-xs text-gray-500">
-                         <li>• Entrega rápida em 24h/48h úteis</li>
-                         <li>• Levantamento em loja disponível</li>
+                         <li>• {language === 'en' ? 'Fast delivery in 24h/48h business hours' : 'Entrega rápida em 24h/48h úteis'}</li>
+                         <li>• {language === 'en' ? 'In-store pickup available' : 'Levantamento em loja disponível'}</li>
                        </ul>
                      </div>
                      <div className="p-3.5 bg-gray-50 border border-gray-100 rounded-sm">
-                       <h4 className="font-bold text-brand-charcoal text-[10px] uppercase tracking-wider mb-2 text-brand-gold">Europa & Ilhas</h4>
+                       <h4 className="font-bold text-brand-charcoal text-[10px] uppercase tracking-wider mb-2 text-brand-gold">{language === 'en' ? 'Europe & Islands' : 'Europa & Ilhas'}</h4>
                        <ul className="space-y-1 text-xs text-gray-500">
-                         <li>• Açores e Madeira: 3 a 5 dias úteis</li>
-                         <li>• Europa Comunitária: 4 a 7 dias úteis</li>
-                         <li>• Embalagens reforçadas para exportação</li>
+                         <li>• {language === 'en' ? 'Azores and Madeira: 3 to 5 business days' : 'Açores e Madeira: 3 a 5 dias úteis'}</li>
+                         <li>• {language === 'en' ? 'Continental Europe: 4 to 7 business days' : 'Europa Comunitária: 4 a 7 dias úteis'}</li>
+                         <li>• {language === 'en' ? 'Reinforced export packaging' : 'Embalagens reforçadas para exportação'}</li>
                        </ul>
                      </div>
                    </div>
@@ -372,7 +375,7 @@ export default function ProductDetail({
              {isAlcohol && (
                <div className="mt-12 pt-6 border-t border-gray-100">
                  <p className="text-[9px] font-bold tracking-[0.3em] uppercase text-brand-red/70">
-                   Seja responsável. Beba com moderação. A venda de bebidas alcoólicas é proibida a menores de 18 anos.
+                   {language === 'en' ? 'Be responsible. Drink in moderation. Selling alcohol to minors under 18 is prohibited.' : 'Seja responsável. Beba com moderação. A venda de bebidas alcoólicas é proibida a menores de 18 anos.'}
                  </p>
                </div>
              )}
@@ -383,8 +386,8 @@ export default function ProductDetail({
       {/* Related Products Section */}
       {relatedProducts.length > 0 && (
         <div className="mt-24 border-t border-gray-100 pt-16">
-          <h2 className="text-3xl font-serif text-brand-charcoal text-center mb-2">Poderá Também Gostar</h2>
-          <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-brand-gold text-center mb-12">Uma Seleção Exclusiva de Vinhos e Gourmet Relacionados</p>
+          <h2 className="text-3xl font-serif text-brand-charcoal text-center mb-2">{language === 'en' ? 'You May Also Like' : 'Poderá Também Gostar'}</h2>
+          <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-brand-gold text-center mb-12">{language === 'en' ? 'An Exclusive Selection of Related Wines and Gourmet' : 'Uma Seleção Exclusiva de Vinhos e Gourmet Relacionados'}</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {relatedProducts.map(related => (

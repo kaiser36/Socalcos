@@ -18,8 +18,10 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
+    name_en: '',
     sku: '',
     description: '',
+    description_en: '',
     price: 0,
     weight: 0,
     published: true,
@@ -77,8 +79,10 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
     } else {
       setFormData({
         name: '',
+        name_en: '',
         sku: '',
         description: '',
+        description_en: '',
         price: 0,
         weight: 0,
         published: true,
@@ -300,6 +304,18 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
                           placeholder="Ex: Vinho do Porto Vintage 2011"
                         />
                       </div>
+                      <div className="md:col-span-2 space-y-2">
+                        <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
+                          <Tag size={12} /> Nome Comercial (Inglês)
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.name_en || ''}
+                          onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
+                          className="w-full bg-gray-50/50 border-b border-gray-100 py-4 px-0 outline-none focus:border-brand-red transition-all font-serif text-xl text-brand-charcoal placeholder:text-gray-200"
+                          placeholder="Ex: Vintage Port Wine 2011"
+                        />
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
                           <Hash size={12} /> SKU / Referência Interna
@@ -475,6 +491,18 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                           className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-4 px-4 outline-none transition-all font-sans text-sm rounded-sm resize-none"
                           placeholder="Descreva a história, notas de prova e detalhes únicos deste vinho..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
+                          <FileText size={12} /> Descrição do Produto (Inglês)
+                        </label>
+                        <textarea
+                          rows={6}
+                          value={formData.description_en || ''}
+                          onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
+                          className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-4 px-4 outline-none transition-all font-sans text-sm rounded-sm resize-none"
+                          placeholder="Describe the history, tasting notes, and unique details of this wine..."
                         />
                       </div>
                       <div className="space-y-2">

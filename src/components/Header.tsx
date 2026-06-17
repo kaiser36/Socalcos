@@ -1,6 +1,7 @@
 import { Search, ShoppingCart, User, ShieldCheck, X, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage, Language } from '../context/LanguageContext';
 import { useState } from 'react';
 
 import Logo from './Logo';
@@ -27,6 +28,7 @@ export default function Header({
   setIsSearchOpen
 }: HeaderProps) {
   const { user, isAdmin } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
 
   const handleUserClick = () => {
     if (user) {
@@ -56,19 +58,19 @@ export default function Header({
             onClick={() => onNavigate('store')}
             className={`transition-colors hover:text-brand-red ${currentPage === 'store' ? 'text-brand-red border-b-2 border-brand-red pb-1' : ''}`}
           >
-            Loja
+            {t('nav.store')}
           </button>
           <button 
             onClick={() => onNavigate('about')}
             className={`transition-colors hover:text-brand-red ${currentPage === 'about' ? 'text-brand-red border-b-2 border-brand-red pb-1' : ''}`}
           >
-            Quem somos
+            {t('nav.about')}
           </button>
           <button 
             onClick={() => onNavigate('location')}
             className={`transition-colors hover:text-brand-red ${currentPage === 'location' ? 'text-brand-red border-b-2 border-brand-red pb-1' : ''}`}
           >
-            Localização
+            {t('nav.location')}
           </button>
         </nav>
 
@@ -79,6 +81,18 @@ export default function Header({
         </div>
 
         <div className="flex items-center gap-6">
+          <div className="hidden sm:flex items-center gap-1.5 border-r border-gray-200 pr-4">
+            {(['pt', 'en'] as const).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setLanguage(lang)}
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${language === lang ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-red hover:bg-gray-100'}`}
+              >
+                {lang.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
           <div className="flex items-center">
             <AnimatePresence>
               {isSearchOpen && (
@@ -91,7 +105,7 @@ export default function Header({
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Pesquisar..."
+                    placeholder={t('nav.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => onSearch(e.target.value)}
                     className="w-full bg-gray-50 border-none py-2 px-4 text-sm font-sans outline-none focus:ring-1 focus:ring-brand-red/20 rounded-sm"
@@ -154,10 +168,10 @@ export default function Header({
             </button>
 
             <nav className="flex flex-col items-center gap-8 text-2xl font-serif text-white">
-              <button onClick={() => handleMobileNav('home')} className="hover:text-brand-gold transition-colors">Início</button>
-              <button onClick={() => handleMobileNav('store')} className="hover:text-brand-gold transition-colors">Loja</button>
-              <button onClick={() => handleMobileNav('about')} className="hover:text-brand-gold transition-colors">Quem somos</button>
-              <button onClick={() => handleMobileNav('location')} className="hover:text-brand-gold transition-colors">Localização</button>
+              <button onClick={() => handleMobileNav('home')} className="hover:text-brand-gold transition-colors">{language === 'pt' ? 'Início' : language === 'en' ? 'Home' : language === 'de' ? 'Startseite' : 'Home'}</button>
+              <button onClick={() => handleMobileNav('store')} className="hover:text-brand-gold transition-colors">{t('nav.store')}</button>
+              <button onClick={() => handleMobileNav('about')} className="hover:text-brand-gold transition-colors">{t('nav.about')}</button>
+              <button onClick={() => handleMobileNav('location')} className="hover:text-brand-gold transition-colors">{t('nav.location')}</button>
               
               <div className="w-16 h-px bg-white/20 my-2"></div>
               
@@ -165,8 +179,20 @@ export default function Header({
                 onClick={() => { setIsMobileMenuOpen(false); handleUserClick(); }} 
                 className="hover:text-brand-gold transition-colors flex items-center gap-3 text-lg font-sans tracking-widest uppercase"
               >
-                <User size={18} /> {user ? 'A Minha Conta' : 'Iniciar Sessão'}
+                <User size={18} /> {user ? t('nav.profile') : t('nav.login')}
               </button>
+
+              <div className="flex items-center gap-4 mt-6">
+                {(['pt', 'en'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setLanguage(lang)}
+                    className={`text-sm font-bold px-3 py-1 rounded transition-all ${language === lang ? 'bg-brand-red text-white' : 'text-gray-400 hover:text-brand-gold'}`}
+                  >
+                    {lang.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </nav>
           </motion.div>
         )}

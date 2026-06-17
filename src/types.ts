@@ -1,6 +1,7 @@
 export interface Category {
   id: string;
   name: string;
+  name_en?: string;
   parent_id?: string;
   slug: string;
 }
@@ -29,7 +30,9 @@ export interface Product {
   id: string;
   sku: string;
   name: string;
+  name_en?: string;
   description: string;
+  description_en?: string;
   price: number;
   weight: number;
   published: boolean;
