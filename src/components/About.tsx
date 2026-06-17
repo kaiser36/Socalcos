@@ -7,7 +7,7 @@ interface AboutProps {
 
 export default function About({ onNavigate }: AboutProps) {
   return (
-    <section className="py-32 px-6 max-w-7xl mx-auto">
+    <section className="pt-16 pb-32 px-6 max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
         <motion.div 
           initial={{ opacity: 0, x: -30 }}

@@ -23,6 +23,7 @@ import Footer from './components/Footer';
 import Store from './components/Store';
 import ProductDetail from './components/ProductDetail';
 import CartDrawer from './components/CartDrawer';
+import WineQuiz from './components/WineQuiz';
 import Checkout from './components/Checkout';
 import Success from './components/Success';
 import { supabase } from './lib/supabase';
@@ -330,6 +331,7 @@ function AppContent() {
               }} 
             />
             <Favorites onSelectProduct={handleProductSelect} onAddToCart={addToCart} products={products} />
+            <WineQuiz products={products} onSelectProduct={handleProductSelect} onAddToCart={addToCart} />
             <About onNavigate={handleNavigate} />
             <Testimonials testimonials={testimonials} />
             <Gallery images={galleryImages} onNavigate={handleNavigate} />
