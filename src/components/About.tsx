@@ -65,3 +65,6 @@ export default function About({ onNavigate }: AboutProps) {
     </section>
   );
 }
+
+// Force re-evaluation of diagnostics
+
