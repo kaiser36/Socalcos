@@ -9,21 +9,21 @@ export default function About({ onNavigate }: AboutProps) {
   return (
     <section className="pt-16 pb-32 px-6 max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           className="lg:w-1/2 aspect-[4/5] overflow-hidden rounded-sm"
         >
-          <img 
-            src="/images/loja-socalcos.jpg" 
-            alt="Loja Socalcos Vinhos & Gourmet" 
+          <img
+            src="/images/loja-socalcos.jpg"
+            alt="Loja Socalcos Vinhos & Gourmet"
             className="w-full h-full object-cover"
           />
         </motion.div>
 
         <div className="lg:w-1/2">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -31,8 +31,8 @@ export default function About({ onNavigate }: AboutProps) {
           >
             Raízes Profundas
           </motion.h2>
-          
-          <motion.div 
+
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -50,7 +50,7 @@ export default function About({ onNavigate }: AboutProps) {
             </p>
           </motion.div>
 
-          <motion.button 
+          <motion.button
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

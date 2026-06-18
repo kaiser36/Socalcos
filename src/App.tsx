@@ -35,6 +35,7 @@ import { Loader2 } from 'lucide-react';
 import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
 import UserProfile from './components/auth/UserProfile';
+import WineGlassLoader from './components/WineGlassLoader';
 
 export default function App() {
   return (
@@ -414,6 +415,10 @@ function AppContent() {
         return null;
     }
   };
+
+  if (dataLoading) {
+    return <WineGlassLoader />;
+  }
 
   if (currentPage === 'admin' && user && isAdmin) {
     return <AdminDashboard />;

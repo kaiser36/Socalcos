@@ -97,14 +97,14 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden mb-16">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1543412849-fd4726551ca0?q=80&w=2670&auto=format&fit=crop" 
-            className="w-full h-full object-cover opacity-15" 
+          <img
+            src="https://images.unsplash.com/photo-1543412849-fd4726551ca0?q=80&w=2670&auto=format&fit=crop"
+            className="w-full h-full object-cover opacity-15"
             alt="Vinha"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
         </div>
-        
+
         <div className="relative z-10 text-center px-6">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -113,7 +113,7 @@ export default function AboutPage() {
           >
             <div className="w-12 h-0.5 bg-brand-red" />
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -121,13 +121,13 @@ export default function AboutPage() {
           >
             {language === 'pt' ? 'A Nossa História' : 'Our Story'}
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="max-w-2xl mx-auto text-base text-gray-500 font-sans leading-relaxed"
           >
-            {language === 'pt' 
+            {language === 'pt'
               ? 'Entre socalcos e gerações, a nossa família dedica-se à arte de selecionar o que de melhor o Douro e Portugal têm para oferecer.'
               : 'Between terraces and generations, our family dedicates itself to the art of selecting the best that Douro and Portugal have to offer.'}
           </motion.p>
@@ -150,9 +150,9 @@ export default function AboutPage() {
           <div className="relative max-w-4xl mx-auto mb-16 px-4">
             {/* Horizontal Line background */}
             <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-100 -translate-y-1/2 z-0" />
-            
+
             {/* Animated Golden Active Progress Line */}
-            <motion.div 
+            <motion.div
               className="absolute top-1/2 left-0 h-0.5 bg-brand-gold -translate-y-1/2 z-0 origin-left"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: activeIndex / (timelineData.length - 1) }}
@@ -172,22 +172,20 @@ export default function AboutPage() {
                     onClick={() => setActiveIndex(idx)}
                     className="flex flex-col items-center focus:outline-none group"
                   >
-                    <motion.div 
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                        isActive 
-                          ? 'border-brand-red bg-brand-red text-white shadow-lg shadow-brand-red/20 scale-110' 
-                          : isPassed 
+                    <motion.div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive
+                          ? 'border-brand-red bg-brand-red text-white shadow-lg shadow-brand-red/20 scale-110'
+                          : isPassed
                             ? 'border-brand-gold bg-brand-gold text-white'
                             : 'border-gray-200 bg-white text-gray-400 group-hover:border-brand-red group-hover:text-brand-red'
-                      }`}
+                        }`}
                       whileHover={{ scale: 1.15 }}
                       whileTap={{ scale: 0.95 }}
                     >
                       <Calendar size={14} className={isActive ? 'animate-pulse' : ''} />
                     </motion.div>
-                    <span className={`mt-3 text-xs font-bold tracking-wider transition-colors duration-300 ${
-                      isActive ? 'text-brand-red font-extrabold scale-105' : 'text-gray-500 group-hover:text-brand-red'
-                    }`}>
+                    <span className={`mt-3 text-xs font-bold tracking-wider transition-colors duration-300 ${isActive ? 'text-brand-red font-extrabold scale-105' : 'text-gray-500 group-hover:text-brand-red'
+                      }`}>
                       {event.year}
                     </span>
                   </button>
@@ -222,7 +220,7 @@ export default function AboutPage() {
                   <p className="text-gray-600 font-sans text-sm leading-relaxed">
                     {activeEvent.description[language]}
                   </p>
-                  
+
                   {/* Slide controls */}
                   <div className="flex gap-4 pt-4">
                     <button
@@ -245,9 +243,9 @@ export default function AboutPage() {
                 {/* Visual Side */}
                 <div className="relative">
                   <div className="aspect-[4/3] md:aspect-[16/10] lg:aspect-[4/3] rounded-sm overflow-hidden shadow-xl relative z-10">
-                    <img 
-                      src={activeEvent.image} 
-                      alt={activeEvent.title[language]} 
+                    <img
+                      src={activeEvent.image}
+                      alt={activeEvent.title[language]}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -267,7 +265,7 @@ export default function AboutPage() {
               {language === 'pt' ? 'Curadoria Especializada' : 'Specialist Curation'}
             </h4>
             <p className="text-sm text-gray-500 font-sans">
-              {language === 'pt' 
+              {language === 'pt'
                 ? 'Selecionamos pessoalmente cada rótulo, garantindo a proveniência e a qualidade excecional.'
                 : 'We personally select each label, ensuring authenticity and exceptional quality.'}
             </p>
@@ -306,7 +304,7 @@ export default function AboutPage() {
           </blockquote>
           <div className="flex flex-col items-center">
             <div className="w-12 h-12 bg-gray-100 rounded-full mb-4 overflow-hidden">
-               <img src="/images/bruno-pinto.jpg" alt="Bruno Pinto - Diretor Geral" className="w-full h-full object-cover" />
+              <img src="/images/bruno-pinto.jpg" alt="Bruno Pinto - Diretor Geral" className="w-full h-full object-cover" />
             </div>
             <span className="text-xs font-bold tracking-widest uppercase text-brand-charcoal">Bruno Pinto</span>
             <span className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">
@@ -326,9 +324,9 @@ export default function AboutPage() {
             ? 'A nossa equipa está disponível para o ajudar a escolher a garrafa perfeita para qualquer ocasião.'
             : 'Our team is available to help you select the perfect bottle for any occasion.'}
         </p>
-        <a 
-          href="https://wa.me/351919139639?text=Olá! Gostaria de obter mais informações sobre os vinhos e produtos gourmet da Socalcos." 
-          target="_blank" 
+        <a
+          href="https://wa.me/351919139639?text=Olá! Gostaria de obter mais informações sobre os vinhos e produtos gourmet da Socalcos."
+          target="_blank"
           rel="noopener noreferrer"
           className="inline-block bg-brand-red text-white px-12 py-4 text-xs font-bold tracking-[0.2em] uppercase rounded-sm hover:bg-brand-red/90 transition-all"
         >
