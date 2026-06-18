@@ -43,7 +43,7 @@ export default function About({ onNavigate }: AboutProps) {
               A Socalcos Vinhos & Gourmet surgiu num edifício reabilitado, junto ao antigo Mercado Ferreira Borges, sendo a versão moderna da Garrafeira Cabaz do Infante. Esta é propriedade do senhor Manuel Pinto, já a Socalcos é de Bruno Pinto, o filho que dá seguimento ao conhecimento da família.
             </p>
             <p>
-              Ampla e "clean", a proposta da Socalcos é oferecer um espaço agradável para turistas e locais fazerem a sua escolha confortavelmente entre as diversas marcas de vinhos do Porto e vinhos de mesa, incluindo uma série de vinhos chamados "superiores".
+              Ampla e &quot;clean&quot;, a proposta da Socalcos é oferecer um espaço agradável para turistas e locais fazerem a sua escolha confortavelmente entre as diversas marcas de vinhos do Porto e vinhos de mesa, incluindo uma série de vinhos chamados &quot;superiores&quot;.
             </p>
             <p>
               Para juntar à cuidada seleção de vinhos, podemos encontrar um conjunto de produtos gourmet, como queijos e compotas, que complementam o paladar dos mais exigentes.
@@ -65,6 +65,3 @@ export default function About({ onNavigate }: AboutProps) {
     </section>
   );
 }
-
-// Force re-evaluation of diagnostics
-
