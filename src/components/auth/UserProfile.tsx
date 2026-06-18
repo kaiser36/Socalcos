@@ -22,7 +22,10 @@ import {
   ArrowRight,
   RefreshCw,
   Trash2,
-  Menu
+  Menu,
+  Wine,
+  Share2,
+  Star
 } from 'lucide-react';
 
 interface UserProfileProps {
@@ -59,6 +62,9 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
   // Local Wishlist State
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
 
+  // Local cellar notes state (contains ratings and private notes)
+  const [cellarNotes, setCellarNotes] = useState<Record<string, { rating: number; note: string }>>({});
+
   // Clipboard success state for coupons
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
@@ -67,8 +73,31 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
     if (user?.email) {
       fetchOrdersAndProducts();
       loadWishlist();
+      loadCellarNotes();
     }
   }, [user]);
+
+  const loadCellarNotes = () => {
+    if (!user?.id) return;
+    const stored = localStorage.getItem(`socalcos_cellar_notes_${user.id}`);
+    if (stored) {
+      try {
+        setCellarNotes(JSON.parse(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleSaveCellarNote = (productId: string, rating: number, note: string) => {
+    if (!user?.id) return;
+    const updated = {
+      ...cellarNotes,
+      [productId]: { rating, note }
+    };
+    setCellarNotes(updated);
+    localStorage.setItem(`socalcos_cellar_notes_${user.id}`, JSON.stringify(updated));
+  };
 
   const fetchOrdersAndProducts = async () => {
     setOrdersLoading(true);
@@ -242,7 +271,7 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
                 onClick={() => setActiveTab('wishlist')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-sm text-[10px] font-bold tracking-widest uppercase transition-all duration-300 ${activeTab === 'wishlist' ? 'bg-brand-red text-white shadow-md shadow-brand-red/15' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-charcoal'}`}
               >
-                <Heart size={15} /> Os Meus Favoritos
+                <Wine size={15} /> Garrafeira Virtual
                 {wishlistIds.length > 0 && (
                   <span className={`ml-auto text-[9px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === 'wishlist' ? 'bg-white text-brand-red' : 'bg-brand-red/5 text-brand-red'}`}>
                     {wishlistIds.length}
@@ -278,7 +307,7 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
                   <Menu size={16} className="text-brand-red" /> 
                   {activeTab === 'overview' && 'Painel Geral'}
                   {activeTab === 'orders' && 'As Minhas Encomendas'}
-                  {activeTab === 'wishlist' && 'Os Meus Favoritos'}
+                  {activeTab === 'wishlist' && 'A Minha Garrafeira Virtual'}
                   {activeTab === 'account' && 'Dados de Conta'}
                   {activeTab === 'rewards' && 'Cupões & Ofertas'}
                 </div>
@@ -297,7 +326,7 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
                       {[
                         { id: 'overview', label: 'Painel Geral', icon: LayoutDashboard },
                         { id: 'orders', label: 'Encomendas', icon: ShoppingBag, count: orders.length },
-                        { id: 'wishlist', label: 'Favoritos', icon: Heart, count: wishlistIds.length },
+                        { id: 'wishlist', label: 'A Minha Garrafeira Virtual', icon: Wine, count: wishlistIds.length },
                         { id: 'account', label: 'Dados de Conta', icon: User },
                         { id: 'rewards', label: 'Cupões & Ofertas', icon: Gift }
                       ].map(tab => (
@@ -360,12 +389,12 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
 
                       <div className="bg-brand-offwhite p-6 border border-gray-100 rounded-sm">
                         <div className="flex items-center gap-3 text-brand-red mb-3">
-                          <Heart size={20} />
-                          <span className="text-[10px] font-bold tracking-wider uppercase text-gray-400">Os meus Favoritos</span>
+                          <Wine size={20} />
+                          <span className="text-[10px] font-bold tracking-wider uppercase text-gray-400">Garrafeira Virtual</span>
                         </div>
                         <p className="text-3xl font-serif text-brand-charcoal">{wishlistIds.length}</p>
                         <button onClick={() => setActiveTab('wishlist')} className="mt-4 flex items-center gap-1.5 text-[9px] font-black text-brand-gold uppercase tracking-wider hover:text-brand-red transition-all">
-                          Gerir Favoritos <ChevronDown className="-rotate-90" size={12} />
+                          Ver Garrafeira <ChevronDown className="-rotate-90" size={12} />
                         </button>
                       </div>
 
@@ -557,14 +586,23 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
                   </div>
                 )}
 
-                {/* 3. PERSONAL WISHLIST TAB */}
+                {/* 3. PERSONAL WISHLIST TAB (VIRTUAL WINE CELLAR) */}
                 {activeTab === 'wishlist' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h2 className="text-2xl font-serif text-brand-charcoal">Os Meus Favoritos</h2>
-                      <p className="text-xs text-gray-400 mt-1 font-sans">
-                        A sua garrafeira pessoal com os produtos que guardou para futuras compras.
-                      </p>
+                  <div className="space-y-8">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-2xl font-serif text-brand-charcoal">A Minha Garrafeira Virtual</h2>
+                        <p className="text-xs text-gray-400 mt-1 font-sans">
+                          Avalie, adicione notas de degustação privadas e partilhe as suas garrafas guardadas.
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={() => onNavigate?.('store')}
+                        className="px-6 py-2.5 border border-brand-red text-brand-red hover:bg-brand-red hover:text-white text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all duration-300 shadow-sm shrink-0"
+                      >
+                        Adicionar Mais Vinhos
+                      </button>
                     </div>
 
                     {ordersLoading ? (
@@ -573,61 +611,142 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
                       </div>
                     ) : wishlistProducts.length === 0 ? (
                       <div className="py-16 text-center border border-dashed border-gray-200 rounded-sm bg-gray-50/30">
-                        <Heart className="mx-auto text-gray-300 mb-4" size={40} />
-                        <p className="text-sm text-gray-500 font-sans">Ainda não adicionou vinhos aos seus favoritos.</p>
+                        <Wine className="mx-auto text-gray-300 mb-4" size={40} />
+                        <p className="text-sm text-gray-500 font-sans">A sua garrafeira virtual está vazia.</p>
                         <button
                           onClick={() => onNavigate?.('store')}
                           className="mt-6 inline-flex items-center gap-2 bg-brand-red text-white px-8 py-3 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-brand-red/90 transition-all rounded-sm shadow-md"
                         >
-                          Ir para a Loja <ArrowRight size={14} />
+                          Explorar Garrafeira <ArrowRight size={14} />
                         </button>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {wishlistProducts.map((product) => {
-                          const formattedPrice = formatPrice(product.price);
+                      /* Visual Cellar Backdrop with Wooden Shelves */
+                      <div className="bg-stone-50/50 border border-stone-200/80 rounded-sm p-8 md:p-12 relative overflow-hidden shadow-sm space-y-16">
+                        
+                        {/* Cellar Ambient Overlay */}
+                        <div className="absolute inset-0 bg-radial-gradient from-amber-50/5 to-transparent pointer-events-none" />
+                        
+                        {/* Split products in groups of 3 to represent shelves */}
+                        {Array.from({ length: Math.ceil(wishlistProducts.length / 3) }).map((_, shelfIdx) => {
+                          const shelfProducts = wishlistProducts.slice(shelfIdx * 3, shelfIdx * 3 + 3);
+
                           return (
-                            <div key={product.id} className="flex gap-4 border border-gray-100 p-4 rounded-sm bg-white hover:shadow-md hover:border-gray-200/50 transition-all duration-300 group relative">
-                              
-                              {/* Remove from wishlist button */}
-                              <button
-                                onClick={() => handleRemoveFromWishlist(product.id)}
-                                className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-brand-red hover:bg-gray-50 rounded-full transition-all"
-                                title="Remover de favoritos"
-                              >
-                                <Trash2 size={15} />
-                              </button>
+                            <div key={shelfIdx} className="relative z-10 flex flex-col justify-end">
+                      {/* Grid of Bottles standing on shelf */}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4 items-end">
+                                {shelfProducts.map((product) => {
+                                  const noteData = cellarNotes[product.id] || { rating: 0, note: '' };
+                                  
+                                  // Dynamic states for editing rating/note locally before saving
+                                  return (
+                                    <div key={product.id} className="bg-white border border-stone-200/60 p-5 rounded-sm flex flex-col justify-between h-[390px] shadow-sm transition-all duration-300 hover:shadow-md hover:border-brand-gold/50">
+                                      
+                                      {/* Visual Bottle on Stand */}
+                                      <div className="h-32 flex items-center justify-center p-3 relative bg-stone-50/40 rounded-sm border border-stone-100">
+                                        <img 
+                                          src={product.image} 
+                                          alt={product.name} 
+                                          className="h-full object-contain filter drop-shadow-[0_6px_8px_rgba(0,0,0,0.15)] group-hover:scale-105 transition-transform duration-500" 
+                                          onError={(e) => { e.currentTarget.src = '/images/logo-v.png'; }}
+                                        />
+                                      </div>
 
-                              <div className="w-20 h-28 bg-gray-50 flex items-center justify-center p-3 border border-gray-100 rounded-sm shrink-0">
-                                <img 
-                                  src={product.image} 
-                                  alt={product.name} 
-                                  className="h-full object-contain group-hover:scale-105 transition-transform duration-500" 
-                                  onError={(e) => { e.currentTarget.src = '/images/logo-v.png'; }}
-                                />
+                                      {/* Product details */}
+                                      <div className="mt-4 flex-1 flex flex-col justify-between space-y-4">
+                                        <div>
+                                          <h4 className="font-serif text-xs text-brand-charcoal font-medium leading-snug line-clamp-1">{product.name}</h4>
+                                          <p className="text-[9px] text-gray-400 mt-1 font-sans">
+                                            {product.region} {product.vintage ? `• ${product.vintage}` : ''}
+                                          </p>
+                                          <p className="text-xs font-semibold text-brand-red mt-1.5">{formatPrice(product.price)}</p>
+                                        </div>
+
+                                        {/* Star selector */}
+                                        <div>
+                                          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Avaliação</span>
+                                          <div className="flex gap-1.5">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                              <button
+                                                key={star}
+                                                onClick={() => handleSaveCellarNote(product.id, star, noteData.note)}
+                                                className="focus:outline-none cursor-pointer"
+                                              >
+                                                <Star
+                                                  size={14}
+                                                  className={`transition-colors duration-300 ${
+                                                    star <= noteData.rating 
+                                                      ? 'fill-brand-gold text-brand-gold' 
+                                                      : 'text-gray-200 hover:text-brand-gold'
+                                                  }`}
+                                                />
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+
+                                        {/* Note edit field */}
+                                        <div className="space-y-1.5">
+                                          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Nota de Prova Privada</span>
+                                          <input
+                                            type="text"
+                                            placeholder="Notas de degustação..."
+                                            value={noteData.note}
+                                            onChange={(e) => handleSaveCellarNote(product.id, noteData.rating, e.target.value)}
+                                            className="w-full bg-stone-50 border border-stone-200 px-3 py-2 text-[10px] text-brand-charcoal focus:outline-none focus:bg-white focus:border-brand-gold rounded-sm font-sans placeholder-gray-400 focus:ring-1 focus:ring-brand-gold/20"
+                                          />
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100">
+                                          {/* WhatsApp Share */}
+                                          <a
+                                            href={`https://wa.me/?text=${encodeURIComponent(
+                                              `Olha para este vinho excelente da minha Garrafeira Virtual Socalcos: *${product.name}*. Minha nota de prova: "${noteData.note || 'Excelente seleção!'}" (${noteData.rating || 5} estrelas).`
+                                            )}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-gray-400 hover:text-brand-gold rounded-sm transition-all"
+                                            title="Partilhar no WhatsApp"
+                                          >
+                                            <Share2 size={12} />
+                                          </a>
+
+                                          {/* Remove button */}
+                                          <button
+                                            onClick={() => handleRemoveFromWishlist(product.id)}
+                                            className="p-2 bg-stone-50 hover:bg-red-50 border border-stone-200 hover:border-red-200 text-gray-400 hover:text-brand-red rounded-sm transition-all cursor-pointer"
+                                            title="Remover da garrafeira"
+                                          >
+                                            <Trash2 size={12} />
+                                          </button>
+
+                                          {onAddToCart && (
+                                            <button
+                                              onClick={() => onAddToCart(product)}
+                                              className="flex-1 py-2 bg-brand-red text-white hover:bg-brand-red/90 text-[9px] font-bold uppercase tracking-wider transition-all rounded-sm shadow-md"
+                                            >
+                                              Comprar
+                                            </button>
+                                          )}
+                                        </div>
+
+                                      </div>
+
+                                    </div>
+                                  );
+                                })}
                               </div>
-
-                              <div className="flex-1 flex flex-col justify-between pt-1">
-                                <div>
-                                  <h4 className="font-serif text-sm text-brand-charcoal font-medium leading-snug line-clamp-1 pr-6">{product.name}</h4>
-                                  <p className="text-[10px] text-gray-400 mt-1 font-sans">
-                                    {product.region} {product.vintage ? `• ${product.vintage}` : ''}
-                                  </p>
-                                  <p className="text-sm font-semibold text-brand-charcoal mt-2">{formattedPrice}</p>
-                                </div>
-
-                                {onAddToCart && (
-                                  <button
-                                    onClick={() => onAddToCart(product)}
-                                    className="mt-3 w-fit px-4 py-2 border border-brand-charcoal/10 text-[9px] font-bold uppercase tracking-wider hover:bg-brand-red hover:text-white hover:border-brand-red transition-all duration-300 rounded-sm"
-                                  >
-                                    Adicionar ao Carrinho
-                                  </button>
-                                )}
+                              {/* CSS Wooden Plank Shelf (Light wood gradient) */}
+                              <div className="h-3 w-full bg-gradient-to-r from-[#a1887f] via-[#d7ccc8] to-[#a1887f] rounded-sm shadow-md border-b border-stone-300 mt-4 relative z-0">
+                                {/* Brackets */}
+                                <div className="absolute left-8 -bottom-1 w-1.5 h-1 bg-[#d7ccc8] rounded-sm shadow-sm" />
+                                <div className="absolute right-8 -bottom-1 w-1.5 h-1 bg-[#d7ccc8] rounded-sm shadow-sm" />
                               </div>
                             </div>
                           );
                         })}
+
                       </div>
                     )}
                   </div>

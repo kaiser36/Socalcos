@@ -6,6 +6,164 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import ProductCard from './ProductCard';
 
+const SENSORY_PROFILES = {
+  tawny20: { corpo: 4.8, taninos: 1.5, acidez: 3.2, alcool: 5.0, aroma: 4.8 },
+  reserva_tinto: { corpo: 4.6, taninos: 4.2, acidez: 3.5, alcool: 4.5, aroma: 4.0 },
+  whisky: { corpo: 3.8, taninos: 0.2, acidez: 1.8, alcool: 5.0, aroma: 4.5 },
+  gin: { corpo: 1.2, taninos: 0.0, acidez: 4.0, alcool: 5.0, aroma: 3.8 },
+  vintage: { corpo: 5.0, taninos: 4.8, acidez: 3.8, alcool: 5.0, aroma: 5.0 },
+  alentejo_red: { corpo: 4.2, taninos: 3.8, acidez: 3.4, alcool: 4.2, aroma: 3.6 },
+  queijo: { corpo: 4.5, taninos: 0.0, acidez: 2.2, alcool: 0.0, aroma: 4.2 },
+  compota: { corpo: 3.0, taninos: 0.0, acidez: 2.8, alcool: 1.2, aroma: 4.5 },
+  white: { corpo: 2.8, taninos: 0.0, acidez: 4.2, alcool: 3.8, aroma: 4.0 },
+  default: { corpo: 3.0, taninos: 3.0, acidez: 3.0, alcool: 3.0, aroma: 3.0 }
+};
+
+const getSensoryProfile = (product: Product) => {
+  const nameLower = product.name.toLowerCase();
+  
+  if (nameLower.includes('20 anos') || nameLower.includes('20 year')) return SENSORY_PROFILES.tawny20;
+  if (nameLower.includes('vintage') || nameLower.includes('lbv') || nameLower.includes('late bottled')) return SENSORY_PROFILES.vintage;
+  if (nameLower.includes('10 anos') || nameLower.includes('10 year') || nameLower.includes('reserve') || nameLower.includes('reserva')) {
+    return SENSORY_PROFILES.reserva_tinto;
+  }
+  if (nameLower.includes('white') || nameLower.includes('branco') || nameLower.includes('dry') || nameLower.includes('chip')) return SENSORY_PROFILES.white;
+  if (nameLower.includes('whisky') || nameLower.includes('macallan')) return SENSORY_PROFILES.whisky;
+  if (nameLower.includes('gin') && !nameLower.includes('ginja')) return SENSORY_PROFILES.gin;
+  if (nameLower.includes('queijo')) return SENSORY_PROFILES.queijo;
+  if (nameLower.includes('compota') || nameLower.includes('doce')) return SENSORY_PROFILES.compota;
+  
+  return SENSORY_PROFILES.default;
+};
+
+function DetailRadarChart({ profile, language }: { profile: { corpo: number; taninos: number; acidez: number; alcool: number; aroma: number }; language: 'pt' | 'en' }) {
+  const center = 120;
+  const maxVal = 5;
+  const radius = 55;
+
+  const labels = {
+    pt: { corpo: 'Corpo', taninos: 'Taninos', acidez: 'Acidez', alcool: 'Álcool', aroma: 'Aroma/Doçura' },
+    en: { corpo: 'Body', taninos: 'Tannins', acidez: 'Acidity', alcool: 'Alcohol', aroma: 'Aroma/Sweetness' }
+  };
+
+  const axes = [
+    { key: 'corpo', label: labels[language === 'en' ? 'en' : 'pt'].corpo },
+    { key: 'taninos', label: labels[language === 'en' ? 'en' : 'pt'].taninos },
+    { key: 'acidez', label: labels[language === 'en' ? 'en' : 'pt'].acidez },
+    { key: 'alcool', label: labels[language === 'en' ? 'en' : 'pt'].alcool },
+    { key: 'aroma', label: labels[language === 'en' ? 'en' : 'pt'].aroma },
+  ];
+
+  const points = axes.map((axis, i) => {
+    const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+    const val = profile[axis.key as keyof typeof profile] || 0;
+    const r = (val / maxVal) * radius;
+    const x = center + r * Math.cos(angle);
+    const y = center + r * Math.sin(angle);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const gridRings = [1, 2, 3, 4, 5].map((ringVal) => {
+    return axes.map((_, i) => {
+      const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+      const r = (ringVal / maxVal) * radius;
+      const x = center + r * Math.cos(angle);
+      const y = center + r * Math.sin(angle);
+      return `${x},${y}`;
+    }).join(' ');
+  });
+
+  return (
+    <div className="relative w-56 h-56 mx-auto flex items-center justify-center">
+      <svg className="w-full h-full overflow-visible" viewBox="0 0 240 240">
+        {gridRings.map((ringPoints, idx) => (
+          <polygon
+            key={idx}
+            points={ringPoints}
+            fill="none"
+            stroke="rgba(0, 0, 0, 0.08)"
+            strokeWidth="0.8"
+          />
+        ))}
+
+        {axes.map((_, i) => {
+          const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+          const x2 = center + radius * Math.cos(angle);
+          const y2 = center + radius * Math.sin(angle);
+          return (
+            <line
+              key={i}
+              x1={center}
+              y1={center}
+              x2={x2}
+              y2={y2}
+              stroke="rgba(0, 0, 0, 0.08)"
+              strokeWidth="0.8"
+            />
+          );
+        })}
+
+        <motion.polygon
+          points={points}
+          fill="rgba(114, 14, 30, 0.15)"
+          stroke="#720E1E"
+          strokeWidth="1.5"
+          animate={{ points }}
+          transition={{ type: "spring", stiffness: 45, damping: 12 }}
+        />
+
+        {axes.map((axis, i) => {
+          const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+          const val = profile[axis.key as keyof typeof profile] || 0;
+          const r = (val / maxVal) * radius;
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          return (
+            <motion.circle
+              key={i}
+              cx={x}
+              cy={y}
+              r="3"
+              fill="#FFFFFF"
+              stroke="#720E1E"
+              strokeWidth="1.2"
+              animate={{ cx: x, cy: y }}
+              transition={{ type: "spring", stiffness: 45, damping: 12 }}
+            />
+          );
+        })}
+
+        {axes.map((axis, i) => {
+          const angle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+          const labelDist = radius + 15;
+          const x = center + labelDist * Math.cos(angle);
+          const y = center + labelDist * Math.sin(angle) + 3;
+
+          let textAnchor: "start" | "end" | "middle" = "middle";
+          if (Math.cos(angle) > 0.15) textAnchor = "start";
+          else if (Math.cos(angle) < -0.15) textAnchor = "end";
+
+          return (
+            <text
+              key={i}
+              x={x}
+              y={y}
+              fill="rgba(45, 45, 45, 0.75)"
+              fontSize="9"
+              fontFamily="sans-serif"
+              fontWeight="bold"
+              textAnchor={textAnchor}
+              className="tracking-wider uppercase"
+            >
+              {axis.label}
+            </text>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 interface ProductDetailProps {
   product: Product;
   categoryName?: string;
@@ -329,22 +487,33 @@ export default function ProductDetail({
                )}
 
                {activeTab === 'especificacoes' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 max-w-xl animate-in fade-in duration-300">
-                   {specs.length > 0 ? (
-                     specs.map((spec, index) => (
-                       <div key={index} className="flex justify-between items-center py-2.5 border-b border-gray-100 font-sans text-sm">
-                         <div className="flex items-center gap-2 text-gray-400">
-                           {spec.icon && <spec.icon size={14} className="text-brand-gold" />}
-                           <span className="font-semibold text-xs uppercase tracking-wider">{spec.label}</span>
-                         </div>
-                         <span className="font-medium text-brand-charcoal">{spec.value}</span>
-                       </div>
-                     ))
-                   ) : (
-                     <p className="text-xs text-gray-400 italic">{language === 'en' ? 'Specifications not available for this product.' : 'Especificações não disponíveis para este produto.'}</p>
-                   )}
-                 </div>
-               )}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center animate-in fade-in duration-300">
+                    {/* Left column: specifications sheet */}
+                    <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                      {specs.length > 0 ? (
+                        specs.map((spec, index) => (
+                          <div key={index} className="flex justify-between items-center py-2.5 border-b border-gray-100 font-sans text-sm">
+                            <div className="flex items-center gap-2 text-gray-400">
+                              {spec.icon && <spec.icon size={14} className="text-brand-gold" />}
+                              <span className="font-semibold text-xs uppercase tracking-wider">{spec.label}</span>
+                            </div>
+                            <span className="font-medium text-brand-charcoal">{spec.value}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-400 italic col-span-2">{language === 'en' ? 'Specifications not available for this product.' : 'Especificações não disponíveis para este produto.'}</p>
+                      )}
+                    </div>
+                    
+                    {/* Right column: organoleptic radar chart */}
+                    <div className="md:col-span-5 flex flex-col items-center justify-center p-6 bg-gray-50 border border-gray-100 rounded-sm">
+                      <span className="text-[10px] font-black tracking-widest text-brand-red uppercase mb-4 block">
+                        {language === 'en' ? 'Organoleptic Profile' : 'Perfil Organolético'}
+                      </span>
+                      <DetailRadarChart profile={getSensoryProfile(product)} language={language} />
+                    </div>
+                  </div>
+                )}
 
                {activeTab === 'envio' && (
                  <div className="space-y-4 max-w-xl font-sans text-sm text-gray-600 leading-relaxed animate-in fade-in duration-300">

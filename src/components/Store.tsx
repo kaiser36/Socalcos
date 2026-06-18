@@ -64,13 +64,13 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
         .from('products')
         .select('*', { count: 'exact', head: true })
         .eq('published', true);
-      
+
       if (total !== null) setTotalProductsCount(total);
 
       // 2. Fetch count for each main category
       const mainCategories = categories.filter(c => !c.parent_id);
       const counts: Record<string, number> = {};
-      
+
       await Promise.all(
         mainCategories.map(async (cat) => {
           const { count } = await supabase
@@ -78,11 +78,11 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
             .select('*', { count: 'exact', head: true })
             .eq('category_id', cat.id)
             .eq('published', true);
-            
+
           counts[cat.id] = count || 0;
         })
       );
-      
+
       setCategoryCounts(counts);
     };
 
@@ -94,21 +94,32 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
       setLoading(true);
       setPage(0);
     }
-    
+
     const currentPage = reset ? 0 : page;
     const start = currentPage * itemsPerPage;
     const end = start + itemsPerPage - 1;
 
     let query = supabase.from('products').select('*', { count: 'exact' }).eq('published', true);
-    
+
     // Server-side Filtering
-    if (selectedCategory !== 'Todos') query = query.eq('category_id', selectedCategory);
+    if (selectedCategory !== 'Todos') {
+      const childIds = categories.filter(c => c.parent_id === selectedCategory).map(c => c.id);
+      const allIds = [selectedCategory, ...childIds];
+
+      if (selectedSubcategory !== 'Todos') {
+        query = query.or(`category_id.eq.${selectedSubcategory},subcategory_ids.cs.{"${selectedSubcategory}"}`);
+      } else {
+        const inList = allIds.join(',');
+        const arrayContainsClauses = allIds.map(id => `subcategory_ids.cs.{"${id}"}`).join(',');
+        query = query.or(`category_id.in.(${inList}),${arrayContainsClauses}`);
+      }
+    }
     if (selectedRegion !== 'Todas') query = query.eq('region', selectedRegion);
     if (selectedProducer !== 'Todos') query = query.eq('producer', selectedProducer);
     if (selectedVintage !== 'Todos') query = query.eq('harvest', selectedVintage);
     if (selectedCapacity !== 'Todas') query = query.eq('capacity', selectedCapacity);
     if (maxPrice < 1000) query = query.lte('price', maxPrice);
-    
+
     if (searchQuery) {
       query = query.or(`name.ilike.%${searchQuery}%,region.ilike.%${searchQuery}%,producer.ilike.%${searchQuery}%`);
     }
@@ -121,17 +132,17 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
     if (productsRes.data) {
       if (reset) setDbProducts(productsRes.data);
       else setDbProducts(prev => [...prev, ...productsRes.data!]);
-      
+
       setHasMore(productsRes.data.length === itemsPerPage);
     }
-    
+
     if (categoriesRes.data) setCategories(categoriesRes.data);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchData(true);
-  }, [searchQuery, selectedCategory, selectedRegion, selectedProducer, selectedVintage, selectedCapacity, maxPrice]);
+  }, [searchQuery, selectedCategory, selectedSubcategory, selectedRegion, selectedProducer, selectedVintage, selectedCapacity, maxPrice]);
 
   const loadMore = () => {
     setPage(prev => prev + 1);
@@ -141,7 +152,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
     if (page > 0) fetchData();
   }, [page]);
 
-  const normalize = (str: string) => 
+  const normalize = (str: string) =>
     str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
 
   const filteredProducts = dbProducts; // Already filtered and sorted server-side
@@ -176,7 +187,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
           <h1 className="text-5xl font-serif mb-4 text-brand-red">A Nossa Loja</h1>
           <p className="text-gray-500 font-sans tracking-wide">Explore a nossa seleção de vinhos e iguarias gourmet do Porto e do mundo.</p>
         </div>
-        
+
         <div className="relative w-full md:w-96">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
@@ -187,7 +198,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
             className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-sm shadow-sm focus:outline-none focus:border-brand-red/30 focus:ring-1 focus:ring-brand-red/5 transition-all text-sm font-sans"
           />
           {searchQuery && (
-            <button 
+            <button
               onClick={() => setSearchQuery('')}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-brand-red transition-colors"
             >
@@ -226,7 +237,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                         <span>{catDisplayName}</span>
                         <span className="text-[10px] opacity-40">({categoryCounts[cat.id] || 0})</span>
                       </button>
-                      
+
                       {/* Sub-categorias dinâmicas no mesmo bloco */}
                       {selectedCategory === cat.id && availableSubcategories.length > 0 && (
                         <div className="flex flex-col gap-2 pl-4 border-l border-gray-100 mt-2 animate-in slide-in-from-top-1 duration-300">
@@ -257,14 +268,14 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                 <h3 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Região</h3>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button 
+                <button
                   onClick={() => setSelectedRegion('Todas')}
                   className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all rounded-full border ${selectedRegion === 'Todas' ? 'bg-brand-red border-brand-red text-white shadow-md' : 'bg-white border-gray-100 text-gray-400 hover:border-brand-red/30'}`}
                 >
                   Todas
                 </button>
                 {uniqueValues.regions.map(region => (
-                  <button 
+                  <button
                     key={region}
                     onClick={() => setSelectedRegion(region)}
                     className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all rounded-full border ${selectedRegion === region ? 'bg-brand-red border-brand-red text-white shadow-md' : 'bg-white border-gray-100 text-gray-400 hover:border-brand-red/30'}`}
@@ -303,7 +314,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                   </div>
                   <span className="text-xs font-bold text-brand-red">{new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(maxPrice)}</span>
                 </div>
-                <input 
+                <input
                   type="range"
                   min="0"
                   max={Math.max(...dbProducts.map(p => p.price), 1000)}
@@ -349,7 +360,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => {
                 setSelectedCategory('Todos');
                 setSelectedSubcategory('Todos');
@@ -369,7 +380,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
 
         {/* Mobile Filter Toggle */}
         <div className="lg:hidden flex items-center justify-between mb-8 pb-4 border-b border-gray-100">
-          <button 
+          <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="flex items-center gap-2 text-sm font-bold tracking-widest uppercase text-brand-charcoal"
           >
@@ -382,7 +393,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
         {/* Mobile Filters Dropdown */}
         <AnimatePresence>
           {isFilterOpen && (
-            <motion.div 
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -414,20 +425,20 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                   </div>
                   {/* Mobile Subcategories */}
                   {selectedCategory !== 'Todos' && availableSubcategories.length > 0 && (
-                     <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-50">
-                        {availableSubcategories.map(sub => {
-                          const subDisplayName = (language === 'en' && sub.name_en) ? sub.name_en : sub.name;
-                          return (
-                            <button
-                              key={sub.id}
-                              onClick={() => setSelectedSubcategory(sub.id)}
-                              className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase border rounded-full transition-all ${selectedSubcategory === sub.id ? 'bg-brand-charcoal border-brand-charcoal text-white' : 'border-gray-200 text-gray-500'}`}
-                            >
-                              {subDisplayName}
-                            </button>
-                          );
-                        })}
-                     </div>
+                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-50">
+                      {availableSubcategories.map(sub => {
+                        const subDisplayName = (language === 'en' && sub.name_en) ? sub.name_en : sub.name;
+                        return (
+                          <button
+                            key={sub.id}
+                            onClick={() => setSelectedSubcategory(sub.id)}
+                            className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase border rounded-full transition-all ${selectedSubcategory === sub.id ? 'bg-brand-charcoal border-brand-charcoal text-white' : 'border-gray-200 text-gray-500'}`}
+                          >
+                            {subDisplayName}
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
 
@@ -446,13 +457,13 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-brand-charcoal">Preço Máx</h4>
                       <span className="text-xs font-bold text-brand-red">{new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(maxPrice)}</span>
                     </div>
-                    <input 
+                    <input
                       type="range"
                       min="0"
                       max={Math.max(...dbProducts.map(p => p.price), 1000)}
@@ -507,26 +518,26 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                 </div>
 
                 <div className="pt-4 flex justify-between items-center border-t border-gray-50">
-                   <button 
-                     onClick={() => {
-                       setSelectedCategory('Todos');
-                       setSelectedSubcategory('Todos');
-                       setSelectedRegion('Todas');
-                       setSelectedProducer('Todos');
-                       setSelectedVintage('Todos');
-                       setSelectedCapacity('Todas');
-                       setMaxPrice(Math.max(...dbProducts.map(p => p.price), 1000));
-                     }}
-                     className="text-[10px] font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red"
-                   >
-                     Limpar
-                   </button>
-                   <button 
-                     onClick={() => setIsFilterOpen(false)}
-                     className="px-8 py-3 bg-brand-charcoal text-white text-[10px] font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red transition-all"
-                   >
-                     Aplicar Filtros
-                   </button>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory('Todos');
+                      setSelectedSubcategory('Todos');
+                      setSelectedRegion('Todas');
+                      setSelectedProducer('Todos');
+                      setSelectedVintage('Todos');
+                      setSelectedCapacity('Todas');
+                      setMaxPrice(Math.max(...dbProducts.map(p => p.price), 1000));
+                    }}
+                    className="text-[10px] font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red"
+                  >
+                    Limpar
+                  </button>
+                  <button
+                    onClick={() => setIsFilterOpen(false)}
+                    className="px-8 py-3 bg-brand-charcoal text-white text-[10px] font-bold tracking-widest uppercase rounded-sm hover:bg-brand-red transition-all"
+                  >
+                    Aplicar Filtros
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -550,10 +561,10 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
                   </motion.div>
                 ))}
               </div>
-              
+
               {hasMore && (
                 <div className="flex justify-center pt-8">
-                  <button 
+                  <button
                     onClick={loadMore}
                     disabled={loading}
                     className="px-12 py-4 border border-brand-red text-brand-red text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-brand-red hover:text-white transition-all rounded-sm disabled:opacity-50"
@@ -566,7 +577,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
           ) : (
             <div className="py-24 text-center">
               <p className="text-xl font-serif text-gray-400">Não encontramos produtos para esta pesquisa.</p>
-              <button 
+              <button
                 onClick={() => { setSearchQuery(''); setSelectedCategory('Todos'); }}
                 className="mt-6 text-brand-red font-bold uppercase tracking-widest text-xs border-b border-brand-red pb-1"
               >
