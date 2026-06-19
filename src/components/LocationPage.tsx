@@ -187,39 +187,35 @@ export default function LocationPage() {
 
             <div className="space-y-4 w-full">
               {contactInfo.map((item, index) => {
-                const isMail = item.icon === Mail;
-                const Component = isMail ? motion.div : motion.a;
-                const componentProps = isMail ? {} : {
-                  href: item.link,
-                  target: "_blank",
-                  rel: "noopener noreferrer"
-                };
+                const label = item.icon === MapPin ? (language === 'pt' ? 'Morada' : 'Address') : 
+                              item.icon === Phone && item.text.startsWith('91') ? (language === 'pt' ? 'Telemóvel' : 'Mobile') :
+                              item.icon === Phone ? (language === 'pt' ? 'Telefone Fixo' : 'Landline') :
+                              item.icon === MessageCircle ? 'WhatsApp' :
+                              item.icon === Mail ? 'Email' : (language === 'pt' ? 'Redes Sociais' : 'Social Networks');
 
                 return (
-                  <Component
+                  <motion.a
                     key={index}
-                    {...componentProps}
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     initial={{ opacity: 0, x: -15 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 + index * 0.05 }}
-                    className={`flex items-center gap-5 p-2 rounded-sm border border-transparent ${isMail ? '' : 'hover:border-brand-gold/20 hover:bg-brand-charcoal/[0.02] cursor-pointer'} transition-all group`}
+                    className="flex items-center gap-6 p-4 bg-white border border-gray-100 rounded-sm hover:border-brand-gold/30 hover:shadow-md hover:shadow-brand-charcoal/5 transition-all duration-300 group cursor-pointer"
                   >
-                    <div className={`w-12 h-12 bg-brand-charcoal text-white flex items-center justify-center rounded-sm shadow-md ${isMail ? '' : 'group-hover:bg-brand-red'} transition-all duration-500`}>
-                      <item.icon size={18} strokeWidth={1.5} />
+                    <div className="w-12 h-12 bg-brand-red/5 border border-brand-red/10 text-brand-red flex items-center justify-center rounded-full group-hover:bg-brand-red group-hover:text-white group-hover:border-brand-red transition-all duration-500 shrink-0">
+                      <item.icon size={20} strokeWidth={1.5} className="group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[9px] uppercase tracking-[0.2em] text-gray-400 font-bold mb-0.5">
-                        {item.icon === MapPin ? (language === 'pt' ? 'Morada' : 'Address') : 
-                         item.icon === Phone && item.text.startsWith('91') ? (language === 'pt' ? 'Telemóvel' : 'Mobile') :
-                         item.icon === Phone ? (language === 'pt' ? 'Telefone Fixo' : 'Landline') :
-                         item.icon === MessageCircle ? 'WhatsApp' :
-                         item.icon === Mail ? 'Email' : (language === 'pt' ? 'Redes Sociais' : 'Social Networks')}
+                      <span className="text-[9px] uppercase tracking-[0.25em] text-brand-gold font-bold mb-1">
+                        {label}
                       </span>
-                      <span className={`text-brand-charcoal font-serif text-base ${isMail ? '' : 'group-hover:text-brand-red'} transition-colors duration-500`}>
+                      <span className="text-brand-charcoal font-sans text-sm md:text-base font-semibold group-hover:text-brand-red transition-colors duration-300">
                         {item.text}
                       </span>
                     </div>
-                  </Component>
+                  </motion.a>
                 );
               })}
             </div>
