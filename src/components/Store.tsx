@@ -99,11 +99,20 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
     const start = currentPage * itemsPerPage;
     const end = start + itemsPerPage - 1;
 
+    let activeCategories = categories;
+    if (activeCategories.length === 0) {
+      const { data: catData } = await supabase.from('categories').select('*').order('name');
+      if (catData) {
+        activeCategories = catData;
+        setCategories(catData);
+      }
+    }
+
     let query = supabase.from('products').select('*', { count: 'exact' }).eq('published', true);
 
     // Server-side Filtering
     if (selectedCategory !== 'Todos') {
-      const childIds = categories.filter(c => c.parent_id === selectedCategory).map(c => c.id);
+      const childIds = activeCategories.filter(c => c.parent_id === selectedCategory).map(c => c.id);
       const allIds = [selectedCategory, ...childIds];
 
       if (selectedSubcategory !== 'Todos') {
@@ -121,12 +130,28 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
     if (maxPrice < 1000) query = query.lte('price', maxPrice);
 
     if (searchQuery) {
-      query = query.or(`name.ilike.%${searchQuery}%,region.ilike.%${searchQuery}%,producer.ilike.%${searchQuery}%`);
+      let orClause = `name.ilike.%${searchQuery}%,region.ilike.%${searchQuery}%,producer.ilike.%${searchQuery}%`;
+      
+      if (activeCategories.length > 0) {
+        const matchedCategoryIds = activeCategories
+          .filter(cat => 
+            cat.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            (cat.name_en && cat.name_en.toLowerCase().includes(searchQuery.toLowerCase()))
+          )
+          .map(cat => cat.id);
+          
+        if (matchedCategoryIds.length > 0) {
+          const catClause = matchedCategoryIds.map(id => `category_id.eq.${id}`).join(',');
+          const subCatClause = matchedCategoryIds.map(id => `subcategory_ids.cs.{"${id}"}`).join(',');
+          orClause += `,${catClause},${subCatClause}`;
+        }
+      }
+      
+      query = query.or(orClause);
     }
 
-    const [productsRes, categoriesRes] = await Promise.all([
-      query.order('has_photo', { ascending: false }).order('created_at', { ascending: false }).range(start, end),
-      supabase.from('categories').select('*').order('name')
+    const [productsRes] = await Promise.all([
+      query.order('has_photo', { ascending: false }).order('created_at', { ascending: false }).range(start, end)
     ]);
 
     if (productsRes.data) {
@@ -136,7 +161,6 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
       setHasMore(productsRes.data.length === itemsPerPage);
     }
 
-    if (categoriesRes.data) setCategories(categoriesRes.data);
     setLoading(false);
   };
 
@@ -171,7 +195,7 @@ export default function Store({ onSelectProduct, onAddToCart, externalSearch, on
     return categories.filter(c => c.parent_id === selectedCategory);
   }, [categories, selectedCategory]);
 
-  if (loading) {
+  if (loading && categories.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-brand-red" size={40} />

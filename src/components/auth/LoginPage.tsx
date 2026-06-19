@@ -11,7 +11,9 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: any) => v
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   React.useEffect(() => {
     if (user && loginSuccess) {
@@ -31,9 +33,16 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: any) => v
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setResetSuccess(false);
 
     try {
-      if (isSignUp) {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/`,
+        });
+        if (error) throw error;
+        setResetSuccess(true);
+      } else if (isSignUp) {
         const { error } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -66,16 +75,26 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: any) => v
       >
         <div className="text-center mb-10">
           <h2 className="text-3xl font-serif text-brand-charcoal mb-2">
-            {isSignUp ? 'Criar Conta' : 'Aceder ao Backoffice'}
+            {isForgotPassword 
+              ? 'Recuperar Palavra-passe' 
+              : (isSignUp ? 'Criar Conta' : 'Aceder ao Backoffice')}
           </h2>
           <p className="text-sm text-gray-400 font-sans">
-            {isSignUp ? 'Junte-se à Socalcos e explore o Douro' : 'Introduza os seus dados para continuar'}
+            {isForgotPassword 
+              ? 'Introduza o seu email para receber um link de redefinição' 
+              : (isSignUp ? 'Junte-se à Socalcos e explore o Douro' : 'Introduza os seus dados para continuar')}
           </p>
         </div>
 
         {loginSuccess && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-600 text-xs font-bold uppercase tracking-widest rounded-sm text-center">
             Login realizado com sucesso!
+          </div>
+        )}
+
+        {resetSuccess && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 text-xs font-medium rounded-sm text-center">
+            Link de redefinição enviado! Verifique a sua caixa de entrada.
           </div>
         )}
 
@@ -98,17 +117,20 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: any) => v
                 className="w-full bg-gray-50 border-none py-4 pl-12 pr-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
               />
             </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                required
-                type="password"
-                placeholder="Palavra-passe"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-gray-50 border-none py-4 pl-12 pr-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
-              />
-            </div>
+            
+            {!isForgotPassword && (
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  required
+                  type="password"
+                  placeholder="Palavra-passe"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-gray-50 border-none py-4 pl-12 pr-4 outline-none focus:ring-1 focus:ring-brand-red/20 transition-all font-sans text-sm rounded-sm"
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -120,20 +142,40 @@ export default function LoginPage({ onNavigate }: { onNavigate: (page: any) => v
               <Loader2 className="animate-spin" size={18} />
             ) : (
               <>
-                {isSignUp ? 'Registar' : 'Entrar'}
+                {isForgotPassword 
+                  ? 'Enviar Link' 
+                  : (isSignUp ? 'Registar' : 'Entrar')}
                 <ArrowRight size={16} />
               </>
             )}
           </button>
         </form>
 
-        <div className="mt-8 pt-8 border-t border-gray-100 text-center">
-          <button 
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red transition-all"
-          >
-            {isSignUp ? 'Já tem conta? Inicie Sessão' : 'Não tem conta? Registe-se'}
-          </button>
+        <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col items-center gap-4">
+          {isForgotPassword ? (
+            <button 
+              onClick={() => { setIsForgotPassword(false); setError(null); setResetSuccess(false); }}
+              className="text-xs font-bold tracking-widest uppercase text-brand-red hover:underline transition-all"
+            >
+              Voltar ao Início de Sessão
+            </button>
+          ) : (
+            <>
+              <button 
+                onClick={() => { setIsForgotPassword(true); setError(null); }}
+                className="text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red transition-all"
+              >
+                Esqueceu-se da palavra-passe?
+              </button>
+              
+              <button 
+                onClick={() => { setIsSignUp(!isSignUp); setError(null); }}
+                className="text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-brand-red transition-all"
+              >
+                {isSignUp ? 'Já tem conta? Inicie Sessão' : 'Não tem conta? Registe-se'}
+              </button>
+            </>
+          )}
         </div>
       </motion.div>
     </div>
