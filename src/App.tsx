@@ -36,6 +36,7 @@ import LoginPage from './components/auth/LoginPage';
 import AdminDashboard from './components/admin/AdminDashboard';
 import UserProfile from './components/auth/UserProfile';
 import WineGlassLoader from './components/WineGlassLoader';
+import ResetPasswordPage from './components/auth/ResetPasswordPage';
 
 export default function App() {
   return (
@@ -141,7 +142,7 @@ function AppContent() {
     setCurrentPage(page);
     pushHash(buildHash(page));
   }, [pushHash]);
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading, isRecoveringPassword } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
@@ -160,6 +161,12 @@ function AppContent() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [siteSettings, setSiteSettings] = useState({ heroImage: '/images/hero-banner.jpg' });
   const [initialStoreCategory, setInitialStoreCategory] = useState<string | undefined>(initialRoute.categoryId);
+
+  useEffect(() => {
+    if (isRecoveringPassword) {
+      setCurrentPage('reset-password');
+    }
+  }, [isRecoveringPassword]);
 
   useEffect(() => {
     localStorage.setItem('socalcos-cart', JSON.stringify(cartItems));
@@ -398,6 +405,8 @@ function AppContent() {
         );
       case 'login':
         return <LoginPage onNavigate={handleNavigate} />;
+      case 'reset-password':
+        return <ResetPasswordPage onComplete={() => setCurrentPage('login')} />;
       case 'admin':
         if (authLoading) return <div className="min-h-screen flex items-center justify-center font-serif">A carregar...</div>;
         if (!user || !isAdmin) {

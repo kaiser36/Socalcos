@@ -382,7 +382,11 @@ export default function AdminDashboard() {
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
-    if (!error) fetchData();
+    if (error) {
+      alert('Erro ao atualizar o estado da encomenda: ' + error.message);
+    } else {
+      fetchData();
+    }
   };
 
   const formatPrice = (val: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(val);
