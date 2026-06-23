@@ -178,6 +178,9 @@ function AppContent() {
 
     // Listen for browser back/forward navigation
     const onHashChange = () => {
+      if (isRecoveringPassword || window.location.hash.includes('recovery') || window.location.hash.includes('type=recovery')) {
+        return;
+      }
       const route = parseHash(window.location.hash);
       setCurrentPage(route.page);
       if (route.productId) {
@@ -189,7 +192,7 @@ function AppContent() {
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
-  }, []);
+  }, [isRecoveringPassword]);
 
   const fetchSettings = async () => {
     const { data } = await supabase.from('site_settings').select('*');
