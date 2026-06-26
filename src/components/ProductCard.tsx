@@ -17,7 +17,9 @@ export default function ProductCard(props: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   
   const displayName = (language === 'en' && name_en) ? name_en : name;
-  const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(price);
+  const defaultTaxRate = category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
+  const priceWithTax = price * (1 + (tax_rate || defaultTaxRate) / 100);
+  const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(priceWithTax);
   
   useEffect(() => {
     const checkWishlist = () => {

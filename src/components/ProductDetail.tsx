@@ -191,7 +191,9 @@ export default function ProductDetail({
   const [restockRequested, setRestockRequested] = useState(false);
 
   const { language, t } = useLanguage();
-  const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(product.price);
+  const defaultTaxRate = product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
+  const priceWithTax = product.price * (1 + (product.tax_rate || defaultTaxRate) / 100);
+  const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(priceWithTax);
   const displayCategory = categoryName || product.category || 'Gourmet';
 
   // Fix apostrophe typographical issue dynamically

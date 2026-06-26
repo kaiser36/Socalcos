@@ -44,7 +44,10 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
     }
   }, [user]);
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => {
+    const defaultTaxRate = item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
+    return acc + (item.price * (1 + (item.tax_rate || defaultTaxRate) / 100)) * item.quantity;
+  }, 0);
   const shipping = 0;
   const total = subtotal + shipping;
 
@@ -83,12 +86,15 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
         if (orderError) throw orderError;
 
         // 2. Create order items
-        const orderItems = items.map(item => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          price: item.price
-        }));
+        const orderItems = items.map(item => {
+          const defaultTaxRate = item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
+          return {
+            order_id: order.id,
+            product_id: item.id,
+            quantity: item.quantity,
+            price: item.price * (1 + (item.tax_rate || defaultTaxRate) / 100)
+          };
+        });
 
         const { error: itemsError } = await supabase
           .from('order_items')
@@ -303,8 +309,8 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
                 <div className="flex-1">
                   <h4 className="text-xs font-serif text-brand-charcoal leading-tight mb-1">{item.name}</h4>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-gray-400">Qtd: {item.quantity} <span className="mx-1">•</span> IVA {item.tax_rate || 23}%</span>
-                    <span className="text-xs font-medium">{formatPrice(item.price * item.quantity)}</span>
+                    <span className="text-[10px] text-gray-400">Qtd: {item.quantity} <span className="mx-1">•</span> IVA {item.tax_rate || (item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)}%</span>
+                    <span className="text-xs font-medium">{formatPrice((item.price * (1 + (item.tax_rate || (item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)) / 100)) * item.quantity)}</span>
                   </div>
                 </div>
               </div>
