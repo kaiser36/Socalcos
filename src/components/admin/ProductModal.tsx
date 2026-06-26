@@ -154,8 +154,25 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
+
+    // Validações de campos obrigatórios
+    if (!formData.name?.trim()) {
+      alert('Por favor, introduza o Nome Comercial do produto.');
+      return;
+    }
+
+    if (!formData.category_id) {
+      alert('Por favor, selecione uma Categoria Principal para o produto.');
+      return;
+    }
+
+    if (formData.price === undefined || formData.price === null || formData.price <= 0) {
+      alert('Por favor, introduza um Preço Base válido (maior que 0).');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -333,6 +350,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
                             <Layers size={12} /> Categoria Principal
                           </label>
                           <select
+                            required
                             value={formData.category_id}
                             onChange={(e) => setFormData({ ...formData, category_id: e.target.value, subcategory_ids: [] })}
                             className="w-full bg-gray-50/50 border border-transparent focus:bg-white focus:border-gray-100 py-4 px-4 outline-none transition-all font-sans text-sm rounded-sm appearance-none"
