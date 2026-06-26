@@ -12,7 +12,18 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout }: CartDrawerProps) {
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalPriceWithVat = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const formattedTotal = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalPriceWithVat);
+
+  const totalVat = items.reduce((acc, item) => {
+    const defaultTaxRate = item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
+    const taxRate = item.tax_rate || defaultTaxRate;
+    const itemVat = item.price - (item.price / (1 + taxRate / 100));
+    return acc + itemVat * item.quantity;
+  }, 0);
+  const formattedTotalVat = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalVat);
+
+  const subtotal = totalPriceWithVat - totalVat;
   const formattedSubtotal = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(subtotal);
 
   return (
@@ -122,9 +133,13 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
             {items.length > 0 && (
               <div className="p-6 border-t border-gray-100 bg-gray-50/50 space-y-6">
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Subtotal</span>
                     <span className="text-brand-charcoal font-medium">{formattedSubtotal}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total IVA</span>
+                    <span className="text-gray-500 font-medium">{formattedTotalVat}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Envio</span>
@@ -133,7 +148,7 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
                   <div className="pt-4 border-t border-gray-200 flex flex-col gap-1">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-serif text-brand-charcoal">Total</span>
-                      <span className="text-xl font-serif text-brand-red">{formattedSubtotal}</span>
+                      <span className="text-xl font-serif text-brand-red">{formattedTotal}</span>
                     </div>
                     <div className="text-right text-[9px] uppercase tracking-widest text-gray-400 font-bold">
                       (Inclui IVA à taxa em vigor)

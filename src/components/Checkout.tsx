@@ -44,9 +44,18 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
     }
   }, [user]);
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalPriceWithVat = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = 0;
-  const total = subtotal + shipping;
+  const total = totalPriceWithVat + shipping;
+
+  const totalVat = items.reduce((acc, item) => {
+    const defaultTaxRate = item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
+    const taxRate = item.tax_rate || defaultTaxRate;
+    const itemVat = item.price - (item.price / (1 + taxRate / 100));
+    return acc + itemVat * item.quantity;
+  }, 0);
+
+  const subtotal = totalPriceWithVat - totalVat;
 
   const formatPrice = (val: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(val);
 
@@ -315,6 +324,10 @@ export default function Checkout({ items, onBack, onComplete }: CheckoutProps) {
             <div className="flex justify-between text-sm text-gray-500">
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>Total IVA</span>
+              <span>{formatPrice(totalVat)}</span>
             </div>
 
             <div className="flex flex-col gap-1 pt-4 border-t border-gray-200">
