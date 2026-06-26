@@ -12,10 +12,7 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout }: CartDrawerProps) {
-  const subtotal = items.reduce((acc, item) => {
-    const defaultTaxRate = item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
-    return acc + (item.price * (1 + (item.tax_rate || defaultTaxRate) / 100)) * item.quantity;
-  }, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const formattedSubtotal = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(subtotal);
 
   return (
@@ -96,7 +93,7 @@ export default function CartDrawer({ isOpen, onClose, items, onUpdateQuantity, o
                           </button>
                         </div>
                         <span className="text-sm font-medium text-brand-charcoal">
-                          {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format((item.price * (1 + (item.tax_rate || (item.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)) / 100)) * item.quantity)}
+                          {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(item.price * item.quantity)}
                         </span>
                       </div>
                     </div>

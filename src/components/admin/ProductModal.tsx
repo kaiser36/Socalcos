@@ -378,7 +378,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold tracking-widest uppercase text-gray-400 flex items-center gap-2">
-                          <Euro size={12} /> Preço Base (€)
+                          <Euro size={12} /> Preço de Venda Final (com IVA) (€)
                         </label>
                         <input
                           required

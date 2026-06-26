@@ -659,7 +659,7 @@ export default function UserProfile({ onAddToCart, onNavigate }: UserProfileProp
                                           <p className="text-[9px] text-gray-400 mt-1 font-sans">
                                             {product.region} {product.vintage ? `• ${product.vintage}` : ''}
                                           </p>
-                                          <p className="text-xs font-semibold text-brand-red mt-1.5">{formatPrice(product.price * (1 + (product.tax_rate || (product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)) / 100))}</p>
+                                          <p className="text-xs font-semibold text-brand-red mt-1.5">{formatPrice(product.price)}</p>
                                         </div>
 
                                         {/* Star selector */}

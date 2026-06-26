@@ -11,15 +11,13 @@ interface ProductCardProps extends Product {
 }
 
 export default function ProductCard(props: ProductCardProps) {
-  const { id, name, name_en, vintage, region, price, image, rating, category_id, tax_rate, onSelect, onAddToCart } = props;
+  const { id, name, name_en, vintage, region, price, image, rating, onSelect, onAddToCart } = props;
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const [isWishlisted, setIsWishlisted] = useState(false);
   
   const displayName = (language === 'en' && name_en) ? name_en : name;
-  const defaultTaxRate = category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23;
-  const priceWithTax = price * (1 + (tax_rate || defaultTaxRate) / 100);
-  const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(priceWithTax);
+  const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(price);
   
   useEffect(() => {
     const checkWishlist = () => {
