@@ -11,7 +11,7 @@ interface ProductCardProps extends Product {
 }
 
 export default function ProductCard(props: ProductCardProps) {
-  const { id, name, name_en, vintage, region, price, image, rating, onSelect, onAddToCart } = props;
+  const { id, name, name_en, vintage, region, price, image, rating, category_id, tax_rate, onSelect, onAddToCart } = props;
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const [isWishlisted, setIsWishlisted] = useState(false);
