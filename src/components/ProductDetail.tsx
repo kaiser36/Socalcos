@@ -382,13 +382,20 @@ export default function ProductDetail({
           </div>
 
           <div className="mb-8">
-            <p className="text-3xl font-light text-brand-charcoal">{formattedPrice}</p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1.5">
-              {language === 'en' 
-                ? `Includes VAT at ${product.tax_rate || (product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)}%` 
-                : `Inclui IVA a ${product.tax_rate || (product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)}%`
+            <p className="text-3xl font-light text-brand-charcoal">
+              {product.show_price === false 
+                ? (language === 'en' ? 'Price on request' : 'Sob consulta')
+                : formattedPrice
               }
             </p>
+            {product.show_price !== false && (
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1.5">
+                {language === 'en' 
+                  ? `Includes VAT at ${product.tax_rate || (product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)}%` 
+                  : `Inclui IVA a ${product.tax_rate || (product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)}%`
+                }
+              </p>
+            )}
           </div>
 
           {/* Quick specs preview block */}
@@ -408,58 +415,85 @@ export default function ProductDetail({
 
           {/* Add to Cart Controls */}
           <div className="flex flex-col sm:flex-row gap-4 mb-16">
-            <div className={`flex items-center border border-gray-200 h-14 ${product.stock <= 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-              <button 
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-6 h-full hover:bg-gray-50 transition-colors"
-                disabled={quantity <= 1 || product.stock <= 0}
-              >
-                <Minus size={16} />
-              </button>
-              <span className="w-12 text-center font-sans font-medium">{quantity}</span>
-              <button 
-                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                className="px-6 h-full hover:bg-gray-50 transition-colors"
-                disabled={quantity >= product.stock}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-            
-            {product.stock > 0 ? (
-              <button 
-                onClick={() => onAddToCart(product, quantity)}
-                className="flex-1 bg-brand-red text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-red/90"
-              >
-                <ShoppingBag size={18} /> {t('store.addToCart')}
-              </button>
-            ) : (
-              user ? (
-                <button 
-                  onClick={handleRequestRestock}
-                  disabled={isRequestingRestock || restockRequested}
-                  className="flex-1 bg-brand-charcoal text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-charcoal/90 disabled:opacity-50"
-                  title={language === 'en' ? 'Request stock restock' : 'Solicitar reposição de stock'}
+            {product.show_price === false ? (
+              <>
+                <a
+                  href={`https://wa.me/351919139639?text=${encodeURIComponent(
+                    language === 'en'
+                      ? `Olá, gostava de pedir uma cotação para o produto: ${displayName}`
+                      : `Olá, gostava de pedir uma cotação para o produto: ${displayName}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-brand-red text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-red/90 text-center leading-[56px]"
                 >
-                  {isRequestingRestock ? <Loader2 size={18} className="animate-spin" /> : (restockRequested ? <Check size={18} /> : <Mail size={18} />)}
-                  {isRequestingRestock ? (language === 'en' ? 'Sending...' : 'A Enviar...') : (restockRequested ? (language === 'en' ? 'Request Sent' : 'Pedido Enviado') : (language === 'en' ? 'Request Product' : 'Solicitar Produto'))}
+                  {language === 'en' ? 'Request Quote' : 'Pedir Orçamento'}
+                </a>
+                {/* Favorite heart button */}
+                <button 
+                  onClick={handleWishlistToggle}
+                  className={`w-14 h-14 border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center transition-all duration-300 rounded-sm ${isWishlisted ? 'text-brand-red border-brand-red bg-brand-red/5' : 'text-gray-400 hover:bg-gray-50'}`}
+                  title={isWishlisted ? "Remover de favoritos" : "Adicionar aos favoritos"}
+                >
+                  <Heart size={20} className={isWishlisted ? "fill-brand-red" : ""} />
                 </button>
-              ) : (
-                <div className="flex-1 bg-gray-100 text-gray-400 h-14 flex flex-col items-center justify-center rounded-sm">
-                  <span className="text-xs font-bold tracking-[0.2em] uppercase">{language === 'en' ? 'Out of Stock' : 'Esgotado'}</span>
-                  <span className="text-[9px] font-sans text-gray-500">{language === 'en' ? 'Log in to request' : 'Inicie sessão para solicitar'}</span>
+              </>
+            ) : (
+              <>
+                <div className={`flex items-center border border-gray-200 h-14 ${product.stock <= 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <button 
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-6 h-full hover:bg-gray-50 transition-colors"
+                    disabled={quantity <= 1 || product.stock <= 0}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="w-12 text-center font-sans font-medium">{quantity}</span>
+                  <button 
+                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    className="px-6 h-full hover:bg-gray-50 transition-colors"
+                    disabled={quantity >= product.stock}
+                  >
+                    <Plus size={16} />
+                  </button>
                 </div>
-              )
-            )}
+                
+                {product.stock > 0 ? (
+                  <button 
+                    onClick={() => onAddToCart(product, quantity)}
+                    className="flex-1 bg-brand-red text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-red/90"
+                  >
+                    <ShoppingBag size={18} /> {t('store.addToCart')}
+                  </button>
+                ) : (
+                  user ? (
+                    <button 
+                      onClick={handleRequestRestock}
+                      disabled={isRequestingRestock || restockRequested}
+                      className="flex-1 bg-brand-charcoal text-white h-14 flex items-center justify-center gap-3 text-xs font-bold tracking-[0.2em] uppercase transition-all rounded-sm hover:bg-brand-charcoal/90 disabled:opacity-50"
+                      title={language === 'en' ? 'Request stock restock' : 'Solicitar reposição de stock'}
+                    >
+                      {isRequestingRestock ? <Loader2 size={18} className="animate-spin" /> : (restockRequested ? <Check size={18} /> : <Mail size={18} />)}
+                      {isRequestingRestock ? (language === 'en' ? 'Sending...' : 'A Enviar...') : (restockRequested ? (language === 'en' ? 'Request Sent' : 'Pedido Enviado') : (language === 'en' ? 'Request Product' : 'Solicitar Produto'))}
+                    </button>
+                  ) : (
+                    <div className="flex-1 bg-gray-100 text-gray-400 h-14 flex flex-col items-center justify-center rounded-sm">
+                      <span className="text-xs font-bold tracking-[0.2em] uppercase">{language === 'en' ? 'Out of Stock' : 'Esgotado'}</span>
+                      <span className="text-[9px] font-sans text-gray-500">{language === 'en' ? 'Log in to request' : 'Inicie sessão para solicitar'}</span>
+                    </div>
+                  )
+                )}
 
-            {/* Favorite heart button */}
-            <button 
-              onClick={handleWishlistToggle}
-              className={`w-14 h-14 border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center transition-all duration-300 rounded-sm ${isWishlisted ? 'text-brand-red border-brand-red bg-brand-red/5' : 'text-gray-400 hover:bg-gray-50'}`}
-              title={isWishlisted ? "Remover de favoritos" : "Adicionar aos favoritos"}
-            >
-              <Heart size={20} className={isWishlisted ? "fill-brand-red" : ""} />
-            </button>
+                {/* Favorite heart button */}
+                <button 
+                  onClick={handleWishlistToggle}
+                  className={`w-14 h-14 border border-gray-200 hover:border-brand-red hover:text-brand-red flex items-center justify-center transition-all duration-300 rounded-sm ${isWishlisted ? 'text-brand-red border-brand-red bg-brand-red/5' : 'text-gray-400 hover:bg-gray-50'}`}
+                  title={isWishlisted ? "Remover de favoritos" : "Adicionar aos favoritos"}
+                >
+                  <Heart size={20} className={isWishlisted ? "fill-brand-red" : ""} />
+                </button>
+              </>
+            )}
           </div>
 
           {/* Interactive Information Tabs */}

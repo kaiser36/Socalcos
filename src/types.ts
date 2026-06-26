@@ -53,6 +53,7 @@ export interface Product {
   rating: number;
   vintage?: string; // Keeping for compatibility
   is_favorite?: boolean;
+  show_price?: boolean;
 }
 
 export interface CartItem extends Product {

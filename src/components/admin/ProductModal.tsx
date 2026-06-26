@@ -38,7 +38,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
     allergens: '',
     stock: 0,
     tax_rate: 23,
-    rating: 5
+    rating: 5,
+    show_price: true
   });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +75,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
     if (product) {
       setFormData({
         ...product,
-        subcategory_ids: product.subcategory_ids || []
+        subcategory_ids: product.subcategory_ids || [],
+        show_price: product.show_price !== false
       });
     } else {
       setFormData({
@@ -99,7 +101,8 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
         allergens: '',
         stock: 0,
         tax_rate: 23,
-        rating: 5
+        rating: 5,
+        show_price: true
       });
     }
   }, [product, isOpen]);
@@ -280,6 +283,16 @@ export default function ProductModal({ isOpen, onClose, onSave, product }: Produ
                         </div>
                         <div className={`w-10 h-5 rounded-full transition-all relative ${formData.published ? 'bg-green-500' : 'bg-gray-300'}`}>
                           <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${formData.published ? 'left-6' : 'left-1'}`} />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-sm transition-all hover:bg-gray-100 cursor-pointer group" onClick={() => setFormData({ ...formData, show_price: formData.show_price !== false ? false : true })}>
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-brand-charcoal">Mostrar Preço</p>
+                          <p className="text-[9px] text-gray-400">Exibir preço na loja pública</p>
+                        </div>
+                        <div className={`w-10 h-5 rounded-full transition-all relative ${formData.show_price !== false ? 'bg-green-500' : 'bg-gray-300'}`}>
+                          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${formData.show_price !== false ? 'left-6' : 'left-1'}`} />
                         </div>
                       </div>
 

@@ -11,13 +11,16 @@ interface ProductCardProps extends Product {
 }
 
 export default function ProductCard(props: ProductCardProps) {
-  const { id, name, name_en, vintage, region, price, image, rating, onSelect, onAddToCart } = props;
+  const { id, name, name_en, vintage, region, price, image, rating, onSelect, onAddToCart, show_price } = props;
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const [isWishlisted, setIsWishlisted] = useState(false);
   
   const displayName = (language === 'en' && name_en) ? name_en : name;
-  const formattedPrice = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(price);
+  const isPriceHidden = show_price === false;
+  const formattedPrice = isPriceHidden 
+    ? (language === 'en' ? 'Price on request' : 'Sob consulta')
+    : new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(price);
   
   useEffect(() => {
     const checkWishlist = () => {
@@ -109,15 +112,32 @@ export default function ProductCard(props: ProductCardProps) {
       
       <p className="text-base font-medium text-brand-charcoal mb-6">{formattedPrice}</p>
       
-      <button 
-        onClick={(e) => {
-          e.stopPropagation();
-          onAddToCart?.(props);
-        }}
-        className="w-full py-3 px-4 border border-brand-charcoal/10 text-[10px] font-bold tracking-widest uppercase hover:bg-brand-red hover:text-white hover:border-brand-red transition-all duration-300 rounded-sm"
-      >
-        {t('store.addToCart')}
-      </button>
+      {isPriceHidden ? (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            const whatsappUrl = `https://wa.me/351919139639?text=${encodeURIComponent(
+              language === 'en'
+                ? `Olá, gostava de pedir uma cotação para o produto: ${displayName}`
+                : `Olá, gostava de pedir uma cotação para o produto: ${displayName}`
+            )}`;
+            window.open(whatsappUrl, '_blank');
+          }}
+          className="w-full py-3 px-4 border border-brand-charcoal/10 text-[10px] font-bold tracking-widest uppercase hover:bg-brand-red hover:text-white hover:border-brand-red transition-all duration-300 rounded-sm"
+        >
+          {language === 'en' ? 'Request Quote' : 'Pedir Orçamento'}
+        </button>
+      ) : (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToCart?.(props);
+          }}
+          className="w-full py-3 px-4 border border-brand-charcoal/10 text-[10px] font-bold tracking-widest uppercase hover:bg-brand-red hover:text-white hover:border-brand-red transition-all duration-300 rounded-sm"
+        >
+          {t('store.addToCart')}
+        </button>
+      )}
     </motion.div>
   );
 }
