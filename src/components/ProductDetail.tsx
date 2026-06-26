@@ -381,7 +381,15 @@ export default function ProductDetail({
             </div>
           </div>
 
-          <p className="text-3xl font-light text-brand-charcoal mb-8">{formattedPrice}</p>
+          <div className="mb-8">
+            <p className="text-3xl font-light text-brand-charcoal">{formattedPrice}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-1.5">
+              {language === 'en' 
+                ? `Includes VAT at ${product.tax_rate || (product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)}%` 
+                : `Inclui IVA a ${product.tax_rate || (product.category_id === 'f6d05bbb-be25-4b3d-b87b-8c8aad3db1c2' ? 13 : 23)}%`
+              }
+            </p>
+          </div>
 
           {/* Quick specs preview block */}
           {specs.length > 0 && (
