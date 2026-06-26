@@ -108,7 +108,7 @@ export default function WineGlassLoader() {
         className="mt-8 text-center"
       >
         <p className="font-serif text-brand-charcoal tracking-wide text-sm">
-          {language === 'pt' ? 'Socalcos Heritage' : 'Socalcos Heritage'}
+          {language === 'pt' ? 'Socalcos Vinhos & Gourmet' : 'Socalcos Vinhos & Gourmet'}
         </p>
         <p className="text-[10px] text-brand-gold uppercase tracking-[0.25em] font-bold mt-1.5 animate-pulse">
           {language === 'pt' ? 'A selecionar colheitas...' : 'Selecting vintages...'}

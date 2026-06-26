@@ -92,35 +92,35 @@ function buildHash(page: string, extra?: string): string {
 }
 
 const PAGE_TITLES: Record<string, string> = {
-  home: 'Socalcos Heritage | Vinhos & Gourmet',
-  store: 'Loja | Socalcos Heritage',
-  about: 'Quem Somos | Socalcos Heritage',
-  gallery: 'Galeria | Socalcos Heritage',
-  location: 'Localização | Socalcos Heritage',
-  services: 'Serviços de Entrega | Socalcos Heritage',
-  privacy: 'Política de Privacidade | Socalcos Heritage',
-  terms: 'Termos e Condições | Socalcos Heritage',
-  checkout: 'Finalizar Compra | Socalcos Heritage',
-  success: 'Encomenda Confirmada | Socalcos Heritage',
-  login: 'Iniciar Sessão | Socalcos Heritage',
-  admin: 'Painel de Administração | Socalcos Heritage',
-  profile: 'A Minha Conta | Socalcos Heritage',
+  home: 'Socalcos Vinhos & Gourmet',
+  store: 'Loja | Socalcos Vinhos & Gourmet',
+  about: 'Quem Somos | Socalcos Vinhos & Gourmet',
+  gallery: 'Galeria | Socalcos Vinhos & Gourmet',
+  location: 'Localização | Socalcos Vinhos & Gourmet',
+  services: 'Serviços de Entrega | Socalcos Vinhos & Gourmet',
+  privacy: 'Política de Privacidade | Socalcos Vinhos & Gourmet',
+  terms: 'Termos e Condições | Socalcos Vinhos & Gourmet',
+  checkout: 'Finalizar Compra | Socalcos Vinhos & Gourmet',
+  success: 'Encomenda Confirmada | Socalcos Vinhos & Gourmet',
+  login: 'Iniciar Sessão | Socalcos Vinhos & Gourmet',
+  admin: 'Painel de Administração | Socalcos Vinhos & Gourmet',
+  profile: 'A Minha Conta | Socalcos Vinhos & Gourmet',
 };
 
 const PAGE_DESCRIPTIONS: Record<string, string> = {
   home: 'Descubra a herança líquida do Porto. Uma coleção onde a tradição encontra a excelência contemporânea.',
   store: 'Explore a nossa seleção de vinhos tintos, brancos, espumantes e produtos gourmet selecionados.',
   about: 'Saiba mais sobre a nossa história, a tradição dos socalcos e o nosso compromisso com a excelência.',
-  gallery: 'Visite a galeria de imagens da Socalcos Heritage e sinta a atmosfera dos nossos espaços e vinhas.',
+  gallery: 'Visite a galeria de imagens da Socalcos Vinhos & Gourmet e sinta a atmosfera dos nossos espaços e vinhas.',
   location: 'Encontre-nos no Porto. Saiba como chegar e os nossos horários de funcionamento.',
   services: 'Informações sobre os nossos serviços de entrega rápida e segura de vinhos e produtos gourmet.',
-  privacy: 'Consulte a política de privacidade da Socalcos Heritage.',
-  terms: 'Consulte os termos e condições da Socalcos Heritage.',
-  checkout: 'Finalize a sua encomenda com segurança na Socalcos Heritage.',
-  success: 'Obrigado pela sua encomenda na Socalcos Heritage!',
-  login: 'Inicie sessão na sua conta da Socalcos Heritage.',
-  admin: 'Painel de administração da Socalcos Heritage.',
-  profile: 'Consulte o seu perfil e histórico de encomendas na Socalcos Heritage.',
+  privacy: 'Consulte a política de privacidade da Socalcos Vinhos & Gourmet.',
+  terms: 'Consulte os termos e condições da Socalcos Vinhos & Gourmet.',
+  checkout: 'Finalize a sua encomenda com segurança na Socalcos Vinhos & Gourmet.',
+  success: 'Obrigado pela sua encomenda na Socalcos Vinhos & Gourmet!',
+  login: 'Inicie sessão na sua conta da Socalcos Vinhos & Gourmet.',
+  admin: 'Painel de administração da Socalcos Vinhos & Gourmet.',
+  profile: 'Consulte o seu perfil e histórico de encomendas na Socalcos Vinhos & Gourmet.',
 };
 
 function AppContent() {
@@ -281,11 +281,11 @@ function AppContent() {
   const selectedProduct = products.find(p => p.id === selectedProductId) || directProduct;
 
   useEffect(() => {
-    let title = PAGE_TITLES[currentPage] || 'Socalcos Heritage | Vinhos & Gourmet';
+    let title = PAGE_TITLES[currentPage] || 'Socalcos Vinhos & Gourmet';
     let description = PAGE_DESCRIPTIONS[currentPage] || 'Descubra a herança líquida do Porto. Uma coleção onde a tradição encontra a excelência contemporânea.';
 
     if (currentPage === 'detail' && selectedProduct) {
-      title = `${selectedProduct.name} | Socalcos Heritage`;
+      title = `${selectedProduct.name} | Socalcos Vinhos & Gourmet`;
       if (selectedProduct.description) {
         description = selectedProduct.description;
       }
